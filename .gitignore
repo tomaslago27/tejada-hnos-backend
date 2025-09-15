@@ -1,0 +1,12 @@
+# Node.js files
+node_modules/
+# TypeScript build output
+dist/
+# Environment variables file
+.env
+.env.*
+!.env.example
+# Logs
+logs
+*.log
+npm-debug.log*
