@@ -6,15 +6,19 @@
     "@": "dist",
     "@config": "dist/config",
     "@controllers": "dist/controllers",
+    "@interfaces": "dist/interfaces",
+    "@middlewares": "dist/middlewares",
     "@models": "dist/models",
     "@routes": "dist/routes",
-    "@services": "dist/services"
+    "@scripts": "dist/scripts",
+    "@services": "dist/services",
+    "@utils": "dist/utils"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --watch src --exec ts-node src/index.ts",
+    "dev": "nodemon --watch src --exec ts-node -r tsconfig-paths/register src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node -r ./dist/scripts/register-aliases.js dist/index.js"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +39,7 @@
     "@types/node": "^24.5.0",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2"
   }
 }

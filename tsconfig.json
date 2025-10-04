@@ -18,9 +18,13 @@
       "@/*": ["*"],
       "@config/*": ["config/*"],
       "@controllers/*": ["controllers/*"],
+      "@interfaces/*": ["interfaces/*"],
+      "@middlewares/*": ["middlewares/*"],
       "@models/*": ["models/*"],
       "@routes/*": ["routes/*"],
-      "@services/*": ["services/*"]
+      "@scripts/*": ["scripts/*"],
+      "@services/*": ["services/*"],
+      "@utils/*": ["utils/*"],
     }
   },
   "include": ["src/**/*"],
