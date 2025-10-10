@@ -1,0 +1,101 @@
+### Variables
+@baseUrl = http://localhost:3000
+@accessToken = 
+@refreshToken = 
+
+### ========================================
+### 1. Registrar un nuevo usuario ADMIN
+### ========================================
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123",
+  "name": "Admin",
+  "lastName": "User",
+  "role": "ADMIN"
+}
+
+### ========================================
+### 2. Registrar un nuevo usuario OPERARIO
+### ========================================
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "operario@example.com",
+  "password": "operario123",
+  "name": "Operario",
+  "lastName": "Test",
+  "role": "OPERARIO"
+}
+
+### ========================================
+### 3. Login
+### ========================================
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+### ========================================
+### 4. Obtener información del usuario autenticado
+### ========================================
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### ========================================
+### 5. Refrescar token
+### ========================================
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### ========================================
+### 6. Logout
+### ========================================
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### ========================================
+### 7. Obtener usuarios (requiere autenticación)
+### ========================================
+GET {{baseUrl}}/users
+Authorization: Bearer {{accessToken}}
+
+### ========================================
+### 8. Crear usuario (requiere autenticación y rol ADMIN)
+### ========================================
+POST {{baseUrl}}/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "newuser123",
+  "name": "New",
+  "lastName": "User",
+  "role": "OPERARIO"
+}
+
+### ========================================
+### 9. Prueba sin token (debe fallar con 401)
+### ========================================
+GET {{baseUrl}}/users
+
+### ========================================
+### 10. Prueba con token inválido (debe fallar con 401)
+### ========================================
+GET {{baseUrl}}/users
+Authorization: Bearer invalid_token_here
