@@ -1,10 +1,22 @@
-import { Router } from "express";
-import { getUsers, createUser } from "../controllers/user.controller";
+import { Router } from 'express';
+import { UserController } from '@controllers/user.controller';
+import { authenticate } from '@middlewares/auth.middleware';
+import { authorize } from '@middlewares/authorize.middleware';
+import { UserRole } from '@enums/index';
+import { DataSource } from 'typeorm';
 
-const router = Router();
+export const createUserRoutes = (dataSource: DataSource): Router => {
+  const router = Router();
+  const userController = new UserController(dataSource);
 
-router.get("/", getUsers);
-router.post("/", createUser);
+  // Proteger todas las rutas de usuario con autenticación
+  router.use(authenticate);
 
-export default router;
+  // Rutas específicas
+  router.get('/', authorize(UserRole.ADMIN), userController.getAll);
+  router.get('/:id', authorize(UserRole.ADMIN), userController.getById);
+  router.post('/', authorize(UserRole.ADMIN), userController.create);
+
+  return router;
+};
 

@@ -1,22 +1,51 @@
-import { User } from "../models/user.model";
+import { DataSource, Repository } from 'typeorm';
+import { User } from '@entities/user.entity';
+import { RegisterRequest } from '@interfaces/auth.interface';
+import bcrypt from 'bcrypt';
 
-let users: User[] = [
-  { id: 1, name: "Alice", email: "alice@mail.com" },
-  { id: 2, name: "Bob", email: "bob@mail.com" }
-];
+export class UserService {
+  private userRepository: Repository<User>;
 
-// Obtener todos los usuarios
-export const getAllUsers = (): User[] => {
-  return users;
-};
+  constructor(dataSource: DataSource) {
+    this.userRepository = dataSource.getRepository(User);
+  }
 
-// Crear un nuevo usuario
-export const createUser = (name: string, email: string): User => {
-  const newUser: User = {
-    id: Date.now(),
-    name,
-    email
-  };
-  users.push(newUser);
-  return newUser;
-};
+  /**
+   * Obtener todos los usuarios
+   */
+  async getAll(): Promise<User[]> {
+    return this.userRepository.find();
+  }
+
+  /**
+   * Obtener un usuario por su ID
+   */
+  async getById(id: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { id } });
+  }
+
+  /**
+   * Crear un nuevo usuario
+   * Nota: La contraseña se hashea.
+   */
+  async create(data: Omit<RegisterRequest, 'role'> & { role?: string }): Promise<User> {
+    const { email, password, name, lastName, role } = data;
+
+    const existingUser = await this.userRepository.findOne({ where: { email } });
+    if (existingUser) {
+      throw new Error('El email ya está en uso.');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const newUser = this.userRepository.create({
+      email,
+      name,
+      lastName,
+      passwordHash,
+      role: role as any, // Ajustar si es necesario
+    });
+
+    return this.userRepository.save(newUser);
+  }
+}

@@ -1,25 +1,41 @@
 import "reflect-metadata";
 import express from "express";
 import { ENV } from "@config/environment";
-import usersRoutes from "@routes/user.routes"; // TO-DO: Remove this example route
 import { DatabaseService } from "@services/database.service";
+import { errorHandler } from "@middlewares/error-handler.middleware";
 
-const app = express();
+// Importar las funciones creadoras de rutas
+import { createAuthRoutes } from "@routes/auth.routes";
+import { createUserRoutes } from "@routes/user.routes";
 
-// Middlewares
-app.use(express.json());
+const startServer = async () => {
+  try {
+    // 1. Inicializar la conexión a la base de datos y obtener el dataSource
+    const dataSource = await DatabaseService.initialize();
 
-// Rutas
-app.use("/users", usersRoutes); // TO-DO: Remove this example route
+    const app = express();
 
-// Inicializar conexiones a bases de datos
-DatabaseService.initializeConnections()
-  .then(() => {
+    // 2. Configurar Middlewares
+    app.use(express.json());
+
+    // 3. Configurar Rutas, inyectando el dataSource
+    const authRoutes = createAuthRoutes(dataSource);
+    const userRoutes = createUserRoutes(dataSource);
+    app.use("/auth", authRoutes);
+    app.use("/users", userRoutes);
+
+    // 4. Configurar Error Handler (al final)
+    app.use(errorHandler);
+
+    // 5. Iniciar el servidor
     app.listen(ENV.PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${ENV.PORT}`);
     });
-  })
-  .catch((error) => {
-    console.error("Error initializing the application:", error);
+
+  } catch (error) {
+    console.error("❌ Error initializing the application:", error);
     process.exit(1);
-  });
+  }
+};
+
+startServer();

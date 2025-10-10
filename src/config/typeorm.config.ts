@@ -1,5 +1,9 @@
 import { DataSource } from 'typeorm';
 import { ENV } from "@config/environment";
+import { User } from '@entities/user.entity';
+import { Field } from '@entities/field.entity';
+import { Plot } from '@entities/plot.entity';
+import { ActivityLog } from '@entities/activity-log.entity';
 
 /**
  * PostgreSQL DataSource configuration using TypeORM.
@@ -12,7 +16,7 @@ export const PostgreSQLDataSource = new DataSource({
     username: ENV.POSTGRES_USERNAME,
     password: ENV.POSTGRES_PASSWORD,
     database: ENV.POSTGRES_DATABASE,
-    entities: ['src/models/**/*.model.{ts,js}'],
+    entities: ["src/entities/*.ts"],
     synchronize: true, // Set to false in production
     logging: true,
 });
