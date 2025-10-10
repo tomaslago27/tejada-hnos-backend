@@ -6,6 +6,7 @@ Guía rápida de instalación y ejecución para el proyecto Node + TypeScript.
 
 - Node.js (v18+ recomendado)
 - npm (v9+ recomendado) o yarn
+- PostgreSQL (v12+ recomendado)
 
 ## Pasos de instalación
 
@@ -29,6 +30,11 @@ Guía rápida de instalación y ejecución para el proyecto Node + TypeScript.
 	El proyecto requiere al menos las siguientes variables en `.env`:
 
 	- `PORT` — puerto donde correrá la app (ej. 3000)
+	- `POSTGRES_HOST` — host de PostgreSQL (ej. localhost)
+	- `POSTGRES_PORT` — puerto de PostgreSQL (ej. 5432)
+	- `POSTGRES_USERNAME` — usuario de PostgreSQL
+	- `POSTGRES_PASSWORD` — contraseña de PostgreSQL
+	- `POSTGRES_DATABASE` — nombre de la base de datos
 
 3. Instala dependencias:
 

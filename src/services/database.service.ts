@@ -1,21 +1,16 @@
-import { MySQLDataSource } from '@config/typeorm.config';
-import { connectToMongoDB } from '@config/mongoose.config';
+import { PostgreSQLDataSource } from '@config/typeorm.config';
 
 export class DatabaseService {
     /**
-     * Initialize connections to both MySQL and MongoDB databases.
-     * Exits the process if any connection fails.
+     * Initialize connection to PostgreSQL database.
+     * Exits the process if the connection fails.
      * @returns {Promise<void>}
      */
     static async initializeConnections(): Promise<void> {
         try {
-            // Initialize MySQL connection
-            await MySQLDataSource.initialize();
-            console.log('MySQL Database connection initialized');
-
-            // Initialize MongoDB connection
-            await connectToMongoDB();
-            console.log('All database connections established successfully');
+            // Initialize PostgreSQL connection
+            await PostgreSQLDataSource.initialize();
+            console.log('PostgreSQL Database connection initialized successfully');
         } catch (error) {
             console.error('Error during database initialization:', error);
             process.exit(1);
