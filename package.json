@@ -16,7 +16,7 @@
     "@utils": "dist/utils"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No existen pruebas aún\" && exit 0",
     "dev": "nodemon --watch src --exec ts-node -r tsconfig-paths/register src/index.ts",
     "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/index.js",

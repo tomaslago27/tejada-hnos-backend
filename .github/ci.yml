@@ -1,0 +1,32 @@
+name: CI Checks
+
+on:
+  # Ejecuta este workflow cuando se suba código a CUALQUIER rama
+  # o cuando se abra/actualice un Pull Request.
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    # Este job se llamará "build-and-test"
+    runs-on: ubuntu-latest # Ejecuta el trabajo en un servidor Linux
+
+    steps:
+    # 1. Checkout: Clona el código de la rama actual
+    - uses: actions/checkout@v5
+
+    # 2. Setup Node.js: Configura el entorno (ajusta la versión de node)
+    - name: Set up Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: '20.x' # Puedes cambiar a 18.x, etc.
+
+    # 3. Install Dependencies: Instala lo necesario (si usas npm)
+    - name: Install dependencies
+      run: npm install
+
+    # 4. Run Tests: EJECUTA TUS PRUEBAS (Este es el "check" crucial)
+    - name: Run tests
+      run: npm test
