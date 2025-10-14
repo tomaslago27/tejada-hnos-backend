@@ -16,7 +16,7 @@ export class FieldController {
       }
 
       const fieldData: CreateFieldDto = req.body;
-      const newField = await this.fieldService.create(fieldData, tokenPayload.userId);
+      const newField = await this.fieldService.create(fieldData);
 
       res.status(StatusCodes.CREATED).json({
         data: newField,

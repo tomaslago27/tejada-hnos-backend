@@ -10,25 +10,14 @@ export class FieldService {
   private dataSource = DatabaseService.getDataSource();
   // 2. Pedimos las herramientas (repositorios) a la caja de herramientas
   private fieldRepository = this.dataSource.getRepository(Field);
-  private userRepository = this.dataSource.getRepository(User);
 
   /**
    * Crea un nuevo campo y lo asocia a un usuario.
    * @param fieldData Datos para crear el campo (ej: { name: 'Campo Norte' })
-   * @param userId ID del usuario que crea el campo.
    */
-  public async create(fieldData: CreateFieldDto, userId: string): Promise<Field> {
-    // 1. Buscamos al usuario para asegurarnos de que exista.
-    const findUser = await this.userRepository.findOne({ where: { id: userId } });
-    if (!findUser) {
-      throw new HttpException(StatusCodes.NOT_FOUND, 'El usuario especificado no existe.');
-    }
-
+  public async create(fieldData: CreateFieldDto): Promise<Field> {
     // 2. Creamos la nueva entidad Field.
-    const newField = this.fieldRepository.create({
-      ...fieldData,
-      user: findUser, // Asociamos la entidad User completa.
-    });
+    const newField = this.fieldRepository.create({...fieldData,});
 
     // 3. Guardamos el nuevo campo en la base de datos.
     await this.fieldRepository.save(newField);
@@ -39,10 +28,9 @@ export class FieldService {
    * Devuelve todos los campos de la base de datos.
    */
   public async findAll(): Promise<Field[]> {
-    const fields = await this.fieldRepository.find({ relations: ['user'] }); // Opcional: Cargar la relación con el usuario
+const fields = await this.fieldRepository.find();
     return fields;
   }
-
   /**
    * Busca un campo por su ID.
    * @param fieldId El ID del campo a buscar.

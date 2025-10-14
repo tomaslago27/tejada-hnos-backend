@@ -18,7 +18,4 @@ export class Field {
 
   @OneToMany(() => Plot, plot => plot.field)
   plots: Plot[];
-  //PREGUNTAR SI ESTE CAMBIO ES NECESARIO -- SE MODIFICA EL MODELO DE USER TAMBIEN
-    @ManyToOne(() => User, user => user.fields)
-  user: User
 }

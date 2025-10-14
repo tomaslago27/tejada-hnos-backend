@@ -30,7 +30,4 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
-  //RELACION AGREGADA, PREGUNTAR SI ES NECESARIA
-   @OneToMany(() => Field, field => field.user)
-  fields: Field[];
 }
