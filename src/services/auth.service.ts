@@ -1,11 +1,9 @@
 import { Repository, DataSource } from 'typeorm';
 import bcrypt from 'bcrypt';
 import { User } from '@entities/user.entity';
-import { DatabaseService } from '@services/database.service';
 import { JwtUtils } from '@utils/jwt.utils';
 import { 
   LoginRequest, 
-  RegisterRequest, 
   AuthResponse, 
   TokenPayload 
 } from '@interfaces/auth.interface';
@@ -15,49 +13,6 @@ export class AuthService {
 
   constructor(dataSource: DataSource) {
     this.userRepository = dataSource.getRepository(User);
-  }
-
-  /**
-   * Registrar un nuevo usuario
-   */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    // Verificar si el usuario ya existe
-    const existingUser = await this.userRepository.findOne({
-      where: { email: data.email }
-    });
-
-    if (existingUser) {
-      throw new Error('El usuario ya existe');
-    }
-
-    // Hashear la contraseña
-    const passwordHash = await bcrypt.hash(data.password, 10);
-
-    // Crear el usuario
-    const user = new User();
-    user.email = data.email;
-    user.name = data.name;
-    user.lastName = data.lastName;
-    user.passwordHash = passwordHash;
-    if (data.role) {
-      user.role = data.role;
-    }
-
-    await this.userRepository.save(user);
-
-    // Generar tokens
-    const tokens = this.generateTokens(user);
-
-    return {
-      ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        lastName: user.lastName,
-        role: user.role,
-      },
-    };
   }
 
   /**
@@ -121,16 +76,6 @@ export class AuthService {
     } catch (error) {
       throw new Error('Refresh token inválido o expirado');
     }
-  }
-
-  /**
-   * Cerrar sesión
-   * En este caso solo devolvemos éxito, el cliente debe eliminar los tokens
-   */
-  async logout(): Promise<void> {
-    // El cliente es responsable de eliminar los tokens
-    // Aquí podrías agregar lógica adicional como registrar el logout, etc.
-    return;
   }
 
   /**
