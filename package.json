@@ -6,6 +6,7 @@
     "@": "dist",
     "@config": "dist/config",
     "@controllers": "dist/controllers",
+    "@dtos": "dist/dtos",
     "@entities": "dist/entities",
     "@enums": "dist/enums",
     "@interfaces": "dist/interfaces",
@@ -28,6 +29,8 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "http-status-codes": "^2.3.0",

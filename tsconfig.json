@@ -19,6 +19,7 @@
       "@/*": ["*"],
       "@config/*": ["config/*"],
       "@controllers/*": ["controllers/*"],
+      "@dtos/*": ["dtos/*"],
       "@entities/*": ["entities/*"],
       "@enums/*": ["enums/*"],
       "@interfaces/*": ["interfaces/*"],
