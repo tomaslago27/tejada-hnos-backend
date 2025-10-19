@@ -7,3 +7,10 @@ export interface IField {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface CreateFieldDto {
+  name: string;
+}
+export interface UpdateFieldDto {
+  name?: string;
+}

@@ -7,7 +7,7 @@ import { errorHandler } from "@middlewares/error-handler.middleware";
 // Importar las funciones creadoras de rutas
 import { createAuthRoutes } from "@routes/auth.routes";
 import { createUserRoutes } from "@routes/user.routes";
-
+import { FieldRoutes } from "@routes/field.routes";
 const startServer = async () => {
   try {
     // 1. Inicializar la conexión a la base de datos y obtener el dataSource
@@ -21,9 +21,12 @@ const startServer = async () => {
     // 3. Configurar Rutas, inyectando el dataSource
     const authRoutes = createAuthRoutes(dataSource);
     const userRoutes = createUserRoutes(dataSource);
+    const fieldRoutes = new FieldRoutes();
+
     app.use("/auth", authRoutes);
     app.use("/users", userRoutes);
-
+    app.use(fieldRoutes.path, fieldRoutes.router);
+    
     // 4. Configurar Error Handler (al final)
     app.use(errorHandler);
 

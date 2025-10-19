@@ -1,6 +1,6 @@
 import { UserRole } from '@/enums';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Field } from './field.entity';
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
