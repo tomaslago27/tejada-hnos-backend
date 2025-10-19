@@ -36,5 +36,48 @@ export class ActivityLogController {
         });
     };
 
-    // Métodos para CRUD
+    // Se añade el método para obtener todos los registros de actividad
+    getAll = async (req: Request, res: Response) => {
+        // 1. Se usa el repositorio para obtener todos los registros de actividad
+        const activityLogs = await this.activityLogRepository.find();
+
+        // 2. Se envía una respuesta con los registros obtenidos
+        return res.status(200).json({
+            message: 'Registros de actividad obtenidos exitosamente',
+            data: activityLogs,
+        });
+    };
+
+    // Se añade el método para obtener un registro de actividad por ID
+    getById = async (req: Request, res: Response) => {
+        // 1. Se obtiene el ID desde los parámetros de la URL
+        const { id: activityId} = req.params;
+
+        // 2. Validar si el ID fue proporcionado por la URL
+        if (!activityId) {
+            // Si no hay ID, se envía una respuesta de error
+            return res.status(400).json({
+                message: 'No se proporcionó un ID de registro',
+            });
+        }
+
+        // 3. Se usa el repositorio para buscar un solo registro de actividad por su ID
+        const activityLog = await this.activityLogRepository.findOneBy({
+            id: activityId,
+        });
+
+        // 4. Se verifica si se encontró el registro
+        if (!activityLog) {
+            // si no se encontró, se envía una respuesta de error
+            return res.status(404).json({
+                message: 'Registro de actividad no encontrado',
+            });
+        }
+
+        // 5. Si se lo encuentra, se envía una respuesta con el registro obtenido
+        return res.status(200).json({
+            message: 'Registro de actividad obtenido exitosamente',
+            data: activityLog,
+        });
+    };
 }
