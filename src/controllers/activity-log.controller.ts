@@ -80,4 +80,32 @@ export class ActivityLogController {
             data: activityLog,
         });
     };
+
+    // Se añade método para actualizar un registro de actividad por ID
+    update = async (req: Request, res: Response) => {
+        // Se obtiene el ID desde los parámetros de la URL
+        const { id: activityId } = req.params;
+        const activityData = req.body;
+
+        // 2. Se valida si el ID fue proporcionado en la URL
+        if (!activityId) {
+            // Si no hay ID, se envía una respuesta de error
+            return res.status(400).json({
+                message: 'No se proporcionó un ID de registro',
+            });
+        }
+
+        // 3. Se usa el repositorio para actualizar el registro de actividad
+        await this.activityLogRepository.update(activityId, activityData);
+
+        // 4. Se busca el registro actualizado
+        const updatedActivityLog = await this.activityLogRepository.findOneBy({
+            id: activityId
+        });
+        // 5. Se envía una respuesta con el registro actualizado
+        return res.status(200).json({
+            message: 'Registro de actividad actualizado exitosamente',
+            data: updatedActivityLog,
+        });
+    };
 }

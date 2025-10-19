@@ -7,12 +7,14 @@ export const createActivityLogRoutes = (dataSource: DataSource): Router => {
     const router = Router();
     const controller = new ActivityLogController(dataSource);
 
-    // Cuando llegue una petición POST a la raíz ('/'), se ejecutará el método 'create' del controlador
+    // Endpoint para crear un nuevo registro de actividad
     router.post('/', authenticate, controller.create);
-    // Cuando llegue una petición GET a la raíz ('/'), se ejecutará el método 'getAll'.
+    // Endpoint para obtener todos los registros de actividad
     router.get('/', authenticate, controller.getAll);
-    // El ':id' le dice a Express que esta parte de la URL es un parámetro variable.
+    // Endpoint para obtener un registro de actividad por ID
     router.get('/:id', authenticate, controller.getById);
+    // Endpoint para actualizar un registro de actividad por ID
+    router.put('/:id', authenticate, controller.update);
 
     return router;
 }
