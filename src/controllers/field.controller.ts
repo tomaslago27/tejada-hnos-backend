@@ -4,17 +4,17 @@ import { FieldService } from '@services/field.service';
 import { CreateFieldDto, UpdateFieldDto } from '@interfaces/field.interface';
 import { HttpException } from '../exceptions/HttpException';
 import { TokenPayload } from '@interfaces/auth.interface';
+import { DataSource } from 'typeorm';
 
 export class FieldController {
-  private fieldService = new FieldService();
+  private fieldService: FieldService;
 
-  public createField = async (req: Request, res: Response, next: NextFunction) => {
+  constructor(dataSource: DataSource) {
+    this.fieldService = new FieldService(dataSource);
+  }
+
+  public createField = async (req: Request, res: Response) => {
     try {
-      const tokenPayload = req.user as TokenPayload;
-      if (!tokenPayload) {
-        throw new HttpException(StatusCodes.UNAUTHORIZED, 'Se requiere autenticación');
-      }
-
       const fieldData: CreateFieldDto = req.body;
       const newField = await this.fieldService.create(fieldData);
 
@@ -23,7 +23,9 @@ export class FieldController {
         message: 'Campo creado exitosamente.',
       });
     } catch (error) {
-      next(error);
+      res.status(StatusCodes.BAD_REQUEST).json({
+        message: error instanceof Error ? error.message : 'Error al crear el campo',
+      });
     }
   };
 
