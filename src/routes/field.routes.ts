@@ -3,28 +3,46 @@ import { FieldController } from '@controllers/field.controller';
 import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
 import { UserRole } from '@/enums/index';
-import { Routes } from '@interfaces/routes.interface';
+import { DataSource } from 'typeorm';
 
-export class FieldRoutes implements Routes {
-  // Define la ruta base para todos los endpoints de campos.
-  public path = "/fields";
-  public router = Router();
-  private fieldController = new FieldController();
+export const createFieldRoutes = (dataSource: DataSource): Router => {
+  const router = Router();
+  const fieldController = new FieldController(dataSource);
 
-  constructor() {
-     this.initializeRoutes();
-     console.log('✅ ¡Las rutas de Fields se están cargando correctamente!');
-    }
+  /**
+   * @route   GET /fields
+   * @desc    Obtener todos los campos
+   * @access  Logged-in users
+   */
+  router.get('/', authenticate, fieldController.getFields);
 
-  private initializeRoutes() {
-    // Proteger todas las rutas de /fields para que solo los ADMINS puedan acceder.
-    this.router.use("/", authenticate, authorize(UserRole.ADMIN));
+  /**
+   * @route   GET /fields/:id
+   * @desc    Obtener un campo por su ID
+   * @access  Logged-in users
+   */
+  router.get('/:id', authenticate, fieldController.getFieldById);
 
-    // Define las rutas específicas y las conecta a los métodos del controlador.
-    this.router.get(`/`, this.fieldController.getFields);
-    this.router.get(`/:id`, this.fieldController.getFieldById);
-    this.router.post(`/`, this.fieldController.createField);
-    this.router.put(`/:id`, this.fieldController.updateField);
-    this.router.delete(`/:id`, this.fieldController.deleteField);
-  }
+  /**
+   * @route   POST /fields
+   * @desc    Crear un nuevo campo
+   * @access  Admin only
+   */
+  router.post('/', authenticate, authorize(UserRole.ADMIN), fieldController.createField);
+
+  /**
+   * @route   PUT /fields/:id
+   * @desc    Actualizar un campo por su ID
+   * @access  Admin only
+   */
+  router.put('/:id', authenticate, authorize(UserRole.ADMIN), fieldController.updateField);
+
+  /**
+   * @route   DELETE /fields/:id
+   * @desc    Eliminar un campo por su ID
+   * @access  Admin only
+   */
+  router.delete('/:id', authenticate, authorize(UserRole.ADMIN), fieldController.deleteField);
+
+  return router;
 }

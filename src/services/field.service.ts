@@ -1,15 +1,15 @@
-import { StatusCodes } from 'http-status-codes';
-import { Field } from '@entities/field.entity';
-import { User } from '@entities/user.entity';
-import { CreateFieldDto, UpdateFieldDto } from '@interfaces/field.interface';
-import { DatabaseService } from '@services/database.service';
-import { HttpException } from '../exceptions/HttpException';
+import { StatusCodes } from "http-status-codes";
+import { Field } from "@entities/field.entity";
+import { CreateFieldDto, UpdateFieldDto } from "@interfaces/field.interface";
+import { HttpException } from "../exceptions/HttpException";
+import { DataSource, Repository } from "typeorm";
 
 export class FieldService {
- // 1. Obtenemos el DataSource (la caja de herramientas)
-  private dataSource = DatabaseService.getDataSource();
-  // 2. Pedimos las herramientas (repositorios) a la caja de herramientas
-  private fieldRepository = this.dataSource.getRepository(Field);
+  private fieldRepository: Repository<Field>;
+
+  constructor(dataSource: DataSource) {
+    this.fieldRepository = dataSource.getRepository(Field);
+  }
 
   /**
    * Crea un nuevo campo y lo asocia a un usuario.
@@ -17,7 +17,7 @@ export class FieldService {
    */
   public async create(fieldData: CreateFieldDto): Promise<Field> {
     // 2. Creamos la nueva entidad Field.
-    const newField = this.fieldRepository.create({...fieldData,});
+    const newField = this.fieldRepository.create({ ...fieldData });
 
     // 3. Guardamos el nuevo campo en la base de datos.
     await this.fieldRepository.save(newField);
@@ -28,7 +28,7 @@ export class FieldService {
    * Devuelve todos los campos de la base de datos.
    */
   public async findAll(): Promise<Field[]> {
-const fields = await this.fieldRepository.find();
+    const fields = await this.fieldRepository.find();
     return fields;
   }
   /**
@@ -38,7 +38,7 @@ const fields = await this.fieldRepository.find();
   public async findById(fieldId: string): Promise<Field> {
     const findField = await this.fieldRepository.findOne({ where: { id: fieldId } });
     if (!findField) {
-      throw new HttpException(StatusCodes.NOT_FOUND, 'El campo no fue encontrado.');
+      throw new HttpException(StatusCodes.NOT_FOUND, "El campo no fue encontrado.");
     }
     return findField;
   }
