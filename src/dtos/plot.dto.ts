@@ -15,8 +15,6 @@ export class CreatePlotDto {
   @IsOptional()
   readonly variety?: string;
 
-  @IsUUID()
-  @IsNotEmpty({ message: 'El ID del campo (Field) es obligatorio.' })
   readonly fieldId: string;
 
   @ValidateNested()

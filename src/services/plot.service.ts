@@ -45,7 +45,6 @@ export class PlotService {
     const where = fieldId ? { field: { id: fieldId } } : {};
     return this.plotRepository.find({
         where: where,
-        relations: ['field'],
     });
   }
 

@@ -32,7 +32,11 @@ export class PlotController {
     try {
       const fieldId = req.params.fieldId || (req.query.fieldId as string);
       const plots = await this.plotService.getAllPlots(fieldId);
-      return res.status(200).json(plots);
+      return res.status(200).json({
+        data: plots,
+        count: plots.length,
+        message: 'Plots retrieved successfully.',
+      });
     } catch (error) {
       next(error);
     }
@@ -59,7 +63,10 @@ export class PlotController {
       if (!updatedPlot) {
         return res.status(404).json({ message: 'Plot not found' });
       }
-      return res.status(200).json(updatedPlot);
+      return res.status(200).json({
+        data: updatedPlot,
+        message: 'Plot updated successfully.',
+      });
     } catch (error) {
       next(error);
     }

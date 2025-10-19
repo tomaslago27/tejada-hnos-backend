@@ -37,6 +37,7 @@ export class FieldController {
 
       res.status(StatusCodes.OK).json({
         data: allFields,
+        count: allFields.length,
         message: 'Campos obtenidos exitosamente.',
       });
     } catch (error) {
@@ -55,10 +56,7 @@ export class FieldController {
     }
       const field = await this.fieldService.findById(fieldId);
 
-      res.status(StatusCodes.OK).json({
-        data: field,
-        message: 'Campo obtenido exitosamente.',
-      });
+      res.status(StatusCodes.OK).json(field);
       
     } catch (error) {
       next(error);
