@@ -6,10 +6,13 @@ import { UserRole } from '@/enums/index';
 import { DataSource } from 'typeorm';
 import { validateData } from '@/middlewares/validation.middleware';
 import { CreateFieldDto, UpdateFieldDto } from '@/dtos/field.dto';
+import { CreatePlotDto } from '@/dtos/plot.dto';
+import { PlotController } from '@/controllers/plot.controller';
 
 export const createFieldRoutes = (dataSource: DataSource): Router => {
   const router = Router();
   const fieldController = new FieldController(dataSource);
+  const plotController = new PlotController(dataSource);
 
   router.use(authenticate);
 
@@ -47,6 +50,36 @@ export const createFieldRoutes = (dataSource: DataSource): Router => {
    * @access  Admin only
    */
   router.delete('/:id', authorize(UserRole.ADMIN), fieldController.deleteField);
+
+  // -----------------------------------------------------------------
+  // --- SUB-ROUTER para PLOTS ANIDADAS: /fields/:fieldId/plots ---
+  // -----------------------------------------------------------------
+  // NOTA: { mergeParams: true } es CRUCIAL para que PlotController pueda leer :fieldId
+  const nestedPlotRouter = Router({ mergeParams: true });
+  
+  nestedPlotRouter.use(authenticate);
+
+  /**
+   * @route   POST /fields/:fieldId/plots
+   * @desc    Crear una nueva parcela en el campo especificado
+   * @access  Admin only
+   */
+  nestedPlotRouter.post(
+    '/', 
+    authorize(UserRole.ADMIN), 
+    validateData(CreatePlotDto), 
+    plotController.createPlot
+  );
+
+  /**
+   * @route   GET /fields/:fieldId/plots
+   * @desc    Obtener todas las parcelas de un campo
+   * @access  Logged-in users
+   */
+  nestedPlotRouter.get('/', plotController.getPlots);
+  
+  // Montar el sub-router de Plots en la ruta de Field
+  router.use('/:fieldId/plots', nestedPlotRouter);
 
   return router;
 }

@@ -36,7 +36,7 @@ export class FieldService {
    * @param fieldId El ID del campo a buscar.
    */
   public async findById(fieldId: string): Promise<Field> {
-    const findField = await this.fieldRepository.findOne({ where: { id: fieldId } });
+    const findField = await this.fieldRepository.findOne({ where: { id: fieldId }, relations: ['plots'] });
     if (!findField) {
       throw new HttpException(StatusCodes.NOT_FOUND, "El campo no fue encontrado.");
     }

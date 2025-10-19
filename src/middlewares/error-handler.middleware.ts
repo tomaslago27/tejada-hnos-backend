@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ENV } from '@config/environment';
 
 /**
  * Clase personalizada para errores de autenticación
@@ -17,24 +18,37 @@ export class AuthError extends Error {
  * Middleware para manejar errores de forma centralizada
  */
 export const errorHandler = (
-  err: Error | AuthError,
+  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
-  console.error('Error:', err);
+): Response | void => {
+  // Log completo para facilitar debugging
+  console.error('Error caught by errorHandler:', err);
 
-  if (err instanceof AuthError) {
-    res.status(err.statusCode).json({
-      error: err.name,
-      message: err.message,
-    });
-    return;
+  // Manejar errores típicos como JSON parse errors que Express puede lanzar
+  if (err instanceof SyntaxError && 'status' in err && (err as any).status === 400 && 'body' in err) {
+    return res.status(400).json({ errors: [{ message: 'Invalid JSON payload' }] });
   }
 
-  // Error genérico
-  res.status(500).json({
-    error: 'InternalServerError',
-    message: 'Ha ocurrido un error interno en el servidor',
-  });
+  // Si es AuthError, respetar su código
+  if (err instanceof AuthError) {
+    const item: any = { message: err.message, name: err.name };
+    if (process.env.NODE_ENV !== 'production') item.stack = (err as any)?.stack;
+    return res.status(err.statusCode).json({ errors: [item] });
+  }
+
+  // Otros errores: intentar obtener statusCode si existe
+  const anyErr = err as any;
+  const statusCode = typeof anyErr?.statusCode === 'number' ? anyErr.statusCode : (typeof anyErr?.status === 'number' ? anyErr.status : 500);
+
+  const message = anyErr?.message || 'An internal server error occurred';
+  const name = anyErr?.name || 'InternalServerError';
+
+  const item: any = { message, name };
+  if (process.env.NODE_ENV !== 'production') {
+    item.stack = anyErr?.stack;
+  }
+
+  res.status(statusCode).json({ errors: [item] });
 };
