@@ -15,6 +15,8 @@ export const createActivityLogRoutes = (dataSource: DataSource): Router => {
     router.get('/:id', authenticate, controller.getById);
     // Endpoint para actualizar un registro de actividad por ID
     router.put('/:id', authenticate, controller.update);
+    // Endpoint para eliminar un registro de actividad por ID
+    router.delete('/:id', authenticate, controller.delete);
 
     return router;
 }

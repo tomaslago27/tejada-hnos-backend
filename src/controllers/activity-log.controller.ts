@@ -108,4 +108,24 @@ export class ActivityLogController {
             data: updatedActivityLog,
         });
     };
+
+    // Se añade el método para eliminar un registro de actividad por ID
+    delete = async (req: Request, res: Response) => {
+        // 1. Se obtiene el ID desde los parámetros de la URL
+        const { id: activityId } = req.params;
+
+        // 2. Se valida si el ID fue proporcionado en la URL
+        if (!activityId) {
+            // Si no hay ID, se envía una respuesta de error
+            return res.status(400).json({
+                message: 'No se proporcionó un ID de registro',
+            });
+        }
+
+        // 3. Se usa el repositorio para eliminar el registro de actividad
+        await this.activityLogRepository.delete(activityId);
+
+        // 4. Se envía una respuesta de éxito
+        return res.status(204).send();
+    };
 }
