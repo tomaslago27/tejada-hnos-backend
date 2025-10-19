@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserService } from '@services/user.service';
 import { DataSource } from 'typeorm';
+import { CreateUserDto } from '@/dtos/user.dto';
 
 export class UserController {
   private userService: UserService;
@@ -53,13 +54,9 @@ export class UserController {
    */
   create = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, email, password, lastName } = req.body;
-      if (!name || !email || !password || !lastName) {
-        res.status(400).json({ error: 'Nombre, apellido, email y contraseña son requeridos' });
-        return;
-      }
+      const data: CreateUserDto = req.body;
 
-      const newUser = await this.userService.create({ name, email, password, lastName });
+      const newUser = await this.userService.create(data);
       res.status(201).json({ message: 'Usuario creado', user: newUser });
     } catch (error) {
       res.status(400).json({

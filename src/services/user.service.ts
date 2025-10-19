@@ -1,7 +1,7 @@
 import { DataSource, Repository } from 'typeorm';
 import { User } from '@entities/user.entity';
-import { RegisterRequest } from '@interfaces/auth.interface';
 import bcrypt from 'bcrypt';
+import { CreateUserDto } from '@/dtos/user.dto';
 
 export class UserService {
   private userRepository: Repository<User>;
@@ -28,7 +28,7 @@ export class UserService {
    * Crear un nuevo usuario
    * Nota: La contraseña se hashea.
    */
-  async create(data: Omit<RegisterRequest, 'role'> & { role?: string }): Promise<User> {
+  async create(data: CreateUserDto): Promise<User> {
     const { email, password, name, lastName, role } = data;
 
     const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -38,13 +38,14 @@ export class UserService {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const newUser = this.userRepository.create({
-      email,
-      name,
-      lastName,
-      passwordHash,
-      role: role as any, // Ajustar si es necesario
-    });
+    const newUser = new User();
+    newUser.email = email;
+    newUser.name = name;
+    newUser.lastName = lastName;
+    newUser.passwordHash = passwordHash;
+    if (role) {
+      newUser.role = role;
+    }
 
     return this.userRepository.save(newUser);
   }

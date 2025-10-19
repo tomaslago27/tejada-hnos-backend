@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { AuthService } from '@services/auth.service';
-import { LoginRequest, RegisterRequest, RefreshTokenRequest } from '@interfaces/auth.interface';
+import { RegisterRequest } from '@interfaces/auth.interface';
 
 import { DataSource } from 'typeorm';
+import { UserLoginDto, UserTokenRefreshDto } from '@/dtos/user.dto';
 
 export class AuthController {
   private authService: AuthService;
@@ -11,7 +12,7 @@ export class AuthController {
     this.authService = new AuthService(dataSource);
   }
 
-  /**
+  /** TO-DO: Delete this method, users only can be created via admin user
    * Registrar un nuevo usuario
    */
   register = async (req: Request, res: Response): Promise<void> => {
@@ -44,15 +45,7 @@ export class AuthController {
    */
   login = async (req: Request, res: Response): Promise<void> => {
     try {
-      const data: LoginRequest = req.body;
-
-      // Validar datos requeridos
-      if (!data.email || !data.password) {
-        res.status(400).json({ 
-          message: 'Faltan datos requeridos: email, password' 
-        });
-        return;
-      }
+      const data: UserLoginDto = req.body;
 
       const result = await this.authService.login(data);
 
@@ -72,15 +65,7 @@ export class AuthController {
    */
   refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
-      const data: RefreshTokenRequest = req.body;
-
-      // Validar que se proporcione el refresh token
-      if (!data.refreshToken) {
-        res.status(400).json({ 
-          message: 'Se requiere el refresh token' 
-        });
-        return;
-      }
+      const data: UserTokenRefreshDto = req.body;
 
       const result = await this.authService.refreshToken(data.refreshToken);
 

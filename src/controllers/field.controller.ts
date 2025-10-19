@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { FieldService } from '@services/field.service';
-import { CreateFieldDto, UpdateFieldDto } from '@interfaces/field.interface';
+import { CreateFieldDto, UpdateFieldDto } from '@dtos/field.dto';
 import { HttpException } from '../exceptions/HttpException';
-import { TokenPayload } from '@interfaces/auth.interface';
 import { DataSource } from 'typeorm';
 
 export class FieldController {

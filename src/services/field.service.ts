@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { Field } from "@entities/field.entity";
-import { CreateFieldDto, UpdateFieldDto } from "@interfaces/field.interface";
+import { CreateFieldDto, UpdateFieldDto } from "@dtos/field.dto";
 import { HttpException } from "../exceptions/HttpException";
 import { DataSource, Repository } from "typeorm";
 
@@ -20,8 +20,7 @@ export class FieldService {
     const newField = this.fieldRepository.create({ ...fieldData });
 
     // 3. Guardamos el nuevo campo en la base de datos.
-    await this.fieldRepository.save(newField);
-    return newField;
+    return this.fieldRepository.save(newField);
   }
 
   /**
@@ -31,6 +30,7 @@ export class FieldService {
     const fields = await this.fieldRepository.find();
     return fields;
   }
+  
   /**
    * Busca un campo por su ID.
    * @param fieldId El ID del campo a buscar.
