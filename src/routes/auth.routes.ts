@@ -4,12 +4,14 @@ import { authenticate } from '@middlewares/auth.middleware';
 import { DataSource } from 'typeorm';
 import { authorize } from '@middlewares/authorize.middleware';
 import { UserRole } from '@enums/index';
+import { validateData } from '@/middlewares/validation.middleware';
+import { UserLoginDto, UserTokenRefreshDto } from '@/dtos/user.dto';
 
 export const createAuthRoutes = (dataSource: DataSource): Router => {
   const router = Router();
   const authController = new AuthController(dataSource);
 
-  /**
+  /** TO-DO: Delete this route, users only can be created via admin user
    * @route   POST /auth/register
    * @desc    Registrar un nuevo usuario
    * @access  Public
@@ -21,14 +23,14 @@ export const createAuthRoutes = (dataSource: DataSource): Router => {
    * @desc    Iniciar sesión
    * @access  Public
    */
-  router.post('/login', authController.login);
+  router.post('/login', validateData(UserLoginDto), authController.login);
 
   /**
    * @route   POST /auth/refresh-token
    * @desc    Refrescar el token de acceso
    * @access  Public (requiere un refresh token válido)
    */
-  router.post('/refresh-token', authController.refreshToken);
+  router.post('/refresh-token', validateData(UserTokenRefreshDto), authController.refreshToken);
 
   /**
    * @route   GET /auth/profile

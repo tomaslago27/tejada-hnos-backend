@@ -32,7 +32,3 @@ export interface AuthResponse {
     role: UserRole;
   };
 }
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
