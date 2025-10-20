@@ -9,28 +9,24 @@ import { createAuthRoutes } from "@routes/auth.routes";
 import { createUserRoutes } from "@routes/user.routes";
 import { createFieldRoutes } from "@routes/field.routes";
 import { createPlotRoutes } from "@routes/plot.routes";
+import { createActivityLogRoutes } from "@routes/activity-log.routes";
 
 const startServer = async () => {
   try {
     // 1. Inicializar la conexión a la base de datos y obtener el dataSource
     const dataSource = await DatabaseService.initialize();
-
     const app = express();
 
     // 2. Configurar Middlewares
     app.use(express.json());
 
     // 3. Configurar Rutas, inyectando el dataSource
-    const authRoutes = createAuthRoutes(dataSource);
-    const userRoutes = createUserRoutes(dataSource);
-    const fieldRoutes = createFieldRoutes(dataSource);
-    const plotRoutes = createPlotRoutes(dataSource);
+    app.use("/auth", createAuthRoutes(dataSource));
+    app.use("/users", createUserRoutes(dataSource));
+    app.use("/fields", createFieldRoutes(dataSource));
+    app.use("/plots", createPlotRoutes(dataSource));
+    app.use("/activity-logs", createActivityLogRoutes(dataSource));
 
-    app.use("/auth", authRoutes);
-    app.use("/users", userRoutes);
-    app.use("/fields", fieldRoutes);
-    app.use("/plots", plotRoutes);
-    
     // 4. Configurar Error Handler (al final)
     app.use(errorHandler);
 
