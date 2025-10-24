@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import express from "express";
+import cors from "cors";
 import { ENV } from "@config/environment";
 import { DatabaseService } from "@services/database.service";
 import { errorHandler } from "@middlewares/error-handler.middleware";
@@ -18,6 +19,7 @@ const startServer = async () => {
     const app = express();
 
     // 2. Configurar Middlewares
+    app.use(cors());
     app.use(express.json());
 
     // 3. Configurar Rutas, inyectando el dataSource
