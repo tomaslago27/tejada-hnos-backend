@@ -1,5 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne } from 'typeorm';
 import { Plot } from './plot.entity';
+import { User } from './user.entity';
+import { GeoJSONPolygon } from '@/types';
 
 @Entity('fields')
 export class Field {
@@ -9,12 +11,27 @@ export class Field {
   @Column()
   name: string;
 
+  @Column()
+  area: number;
+
+  @Column()
+  address: string;
+
+  @Column('jsonb')
+  location: GeoJSONPolygon;
+  
+  @OneToMany(() => Plot, plot => plot.field)
+  plots: Plot[];
+
+  @ManyToOne(() => User, user => user.managedFields, { nullable: true })
+  manager: User;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Plot, plot => plot.field)
-  plots: Plot[];
+  @DeleteDateColumn()
+  deletedAt: Date | null;
 }
