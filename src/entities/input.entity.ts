@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, DeleteDateColumn, UpdateDateColumn } from 'typeorm';
 import { InputUnit } from '../enums';
 import { InputUsage } from './input-usage.entity';
+import { PurchaseOrderDetail } from './purchase-order-detail.entity';
 
 @Entity('inputs')
 export class Input {
@@ -21,6 +22,9 @@ export class Input {
 
   @OneToMany(() => InputUsage, usage => usage.input)
   usages: InputUsage[];
+
+  @OneToMany(() => PurchaseOrderDetail, detail => detail.input)
+  purchaseOrderDetails: PurchaseOrderDetail[];
 
   @CreateDateColumn()
   createdAt: Date;

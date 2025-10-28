@@ -1,5 +1,5 @@
 import { ActivityType } from "@/enums";
-import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, JoinColumn } from "typeorm";
 import { WorkOrder } from "./work-order.entity";
 import { ActivityDetails } from "@/types";
 import { InputUsage } from "./input-usage.entity";
@@ -9,7 +9,11 @@ export class Activity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column('uuid')
+  workOrderId: string;
+
   @ManyToOne(() => WorkOrder, order => order.activities)
+  @JoinColumn({ name: 'workOrderId' })
   workOrder: WorkOrder;
 
   @Column({ type: 'enum', enum: ActivityType })

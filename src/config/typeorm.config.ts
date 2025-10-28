@@ -1,9 +1,5 @@
 import { DataSource } from 'typeorm';
 import { ENV } from "@config/environment";
-import { User } from '@entities/user.entity';
-import { Field } from '@entities/field.entity';
-import { Plot } from '@entities/plot.entity';
-import { ActivityLog } from '@entities/activity-log.entity';
 
 /**
  * PostgreSQL DataSource configuration using TypeORM.

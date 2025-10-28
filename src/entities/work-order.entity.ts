@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, JoinColumn } from "typeorm";
 import { User } from "./user.entity";
 import { Plot } from "./plot.entity";
 import { Activity } from "./activity.entity";
@@ -31,7 +31,11 @@ export class WorkOrder {
   })
   status: WorkOrderStatus;
 
+  @Column('uuid', { nullable: true })
+  assignedToId: string | null;
+
   @ManyToOne(() => User, user => user.assignedWorkOrders, { nullable: true })
+  @JoinColumn({ name: 'assignedToId' })
   assignedTo: User | null;
 
   @ManyToMany(() => Plot, plot => plot.workOrders)

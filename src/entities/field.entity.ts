@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Plot } from './plot.entity';
 import { User } from './user.entity';
 import { GeoJSONPolygon } from '@/types';
@@ -23,7 +23,11 @@ export class Field {
   @OneToMany(() => Plot, plot => plot.field)
   plots: Plot[];
 
+  @Column('uuid', { nullable: true })
+  managerId: string | null;
+
   @ManyToOne(() => User, user => user.managedFields, { nullable: true })
+  @JoinColumn({ name: 'managerId' })
   manager: User;
 
   @CreateDateColumn()

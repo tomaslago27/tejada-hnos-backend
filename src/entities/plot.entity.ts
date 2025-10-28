@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToMany, OneToMany, JoinColumn } from 'typeorm';
 import { Field } from './field.entity';
 import { GeoJSONPolygon } from '@/types';
 import { HarvestLot } from './harvest-lot.entity';
 import { WorkOrder } from './work-order.entity';
+import { Variety } from './variety.entity';
 
 @Entity('plots')
 export class Plot {
@@ -15,16 +16,24 @@ export class Plot {
   @Column('decimal')
   area: number;
 
-  @Column({ nullable: true })
-  variety: string;
+  @Column('uuid')
+  varietyId: string;
 
-  @Column({ type: 'int', nullable: true })
-  yearPlanted: number;
-  
+  @ManyToOne(() => Variety, variety => variety.plots)
+  @JoinColumn({ name: 'varietyId' })
+  variety: Variety;
+
+  @Column({ type: 'date', nullable: true })
+  datePlanted: Date;
+
   @Column('jsonb')
   location: GeoJSONPolygon;
 
+  @Column('uuid')
+  fieldId: string;
+
   @ManyToOne(() => Field, field => field.plots)
+  @JoinColumn({ name: 'fieldId' })
   field: Field;
 
   @ManyToMany(() => WorkOrder, order => order.plots)
