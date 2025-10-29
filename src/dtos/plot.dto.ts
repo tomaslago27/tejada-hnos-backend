@@ -20,9 +20,9 @@ export class CreatePlotDto {
   datePlanted?: Date;
 
   // fieldId viene de la URL (params) y se agrega en el controller/middleware
-  @IsOptional()
+  @IsNotEmpty({ message: 'El ID del campo es obligatorio' })
   @IsUUID('4', { message: 'El ID del campo debe ser un UUID válido' })
-  fieldId?: string;
+  fieldId: string;
 
   @ValidateNested()
   @Type(() => LocationDto)

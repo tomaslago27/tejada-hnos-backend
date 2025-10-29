@@ -1,13 +1,13 @@
-import { IsEnum, IsNotEmpty, IsISO8601, IsString, IsOptional, IsNumber, IsUUID, ValidateNested, IsArray } from "class-validator";
+import { IsEnum, IsNotEmpty, IsISO8601, IsOptional, IsNumber, IsUUID, ValidateNested, IsArray } from "class-validator";
 import { ActivityType } from "@/enums";
 import { Type } from "class-transformer";
 import { CreateInputUsageDto } from "./input-usage.dto";
 
 export class CreateActivityDto {
   // workOrderId viene de la URL (params) y se agrega en el controller/middleware
-  @IsOptional()
+  @IsNotEmpty({ message: 'El ID de la orden de trabajo es obligatorio' })
   @IsUUID('4', { message: 'El ID de la orden de trabajo debe ser un UUID válido' })
-  workOrderId?: string;
+  workOrderId: string;
 
   @IsNotEmpty({ message: 'El tipo de actividad no puede estar vacío' })
   @IsEnum(ActivityType, { message: 'El tipo de actividad no es válido' })
