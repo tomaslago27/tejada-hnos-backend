@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import { AuthService } from '@services/auth.service';
-import { RegisterRequest } from '@interfaces/auth.interface';
-
 import { DataSource } from 'typeorm';
+import { AuthService } from '@services/auth.service';
 import { UserLoginDto, UserTokenRefreshDto } from '@/dtos/user.dto';
 
 export class AuthController {

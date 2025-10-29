@@ -1,14 +1,46 @@
-import { MinLength, IsNotEmpty, IsString } from "class-validator";
+import { MinLength, IsNotEmpty, IsString, ValidateNested, IsNumber, IsOptional, IsUUID } from "class-validator";
+import { Type } from "class-transformer";
+import { LocationDto } from "./location.dto";
 
 export class CreateFieldDto {
   @IsString()
   @MinLength(3, { message: 'El nombre debe tener al menos 3 caracteres.' })
   @IsNotEmpty({ message: 'El nombre es obligatorio.' })
   name: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'La dirección es obligatoria.' })
+  address: string;
+
+  @IsNumber()
+  @IsNotEmpty({ message: 'El tamaño es obligatorio.' })
+  area: number;
+
+  @ValidateNested()
+  @Type(() => LocationDto)
+  location: LocationDto;
+
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID del encargado debe ser un UUID válido' })
+  managerId?: string;
 }
 
 export class UpdateFieldDto {
   @IsString()
   @MinLength(3, { message: 'El nombre debe tener al menos 3 caracteres.' })
   name?: string;
+
+  @IsString()
+  address?: string;
+
+  @IsNumber()
+  area?: number;
+
+  @ValidateNested()
+  @Type(() => LocationDto)
+  location?: LocationDto;
+
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID del encargado debe ser un UUID válido' })
+  managerId?: string;
 }

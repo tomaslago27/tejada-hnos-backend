@@ -1,5 +1,5 @@
 import { UserRole } from "@/enums";
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEmail, IsEnum, IsNumber, IsOptional, IsString, Min, MinLength } from "class-validator";
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'El correo electrónico no es válido.' })
@@ -18,6 +18,11 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(UserRole, { message: 'Rol inválido.' })
   role?: UserRole;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'La tarifa por hora debe ser un número.' })
+  @Min(0, { message: 'La tarifa por hora no puede ser negativa.' })
+  hourlyRate?: number;
 }
 
 export class UpdateUserDto {
@@ -41,6 +46,11 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(UserRole, { message: 'Rol inválido.' })
   role?: UserRole;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'La tarifa por hora debe ser un número.' })
+  @Min(0, { message: 'La tarifa por hora no puede ser negativa.' })
+  hourlyRate?: number;
 }
 
 export class UserPasswordUpdateDto {
