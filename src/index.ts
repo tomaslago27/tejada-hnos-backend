@@ -9,7 +9,8 @@ import { createAuthRoutes } from "@routes/auth.routes";
 import { createUserRoutes } from "@routes/user.routes";
 import { createFieldRoutes } from "@routes/field.routes";
 import { createPlotRoutes } from "@routes/plot.routes";
-import { createActivityLogRoutes } from "@routes/activity-log.routes";
+import { createActivityRoutes } from "@/routes/activity.routes";
+import { createWorkOrderRoutes } from "./routes/work-order.routes";
 
 const startServer = async () => {
   try {
@@ -25,7 +26,8 @@ const startServer = async () => {
     app.use("/users", createUserRoutes(dataSource));
     app.use("/fields", createFieldRoutes(dataSource));
     app.use("/plots", createPlotRoutes(dataSource));
-    app.use("/activity-logs", createActivityLogRoutes(dataSource));
+    app.use("/work-orders", createWorkOrderRoutes(dataSource));
+    app.use("/activities", createActivityRoutes(dataSource));
 
     // 4. Configurar Error Handler (al final)
     app.use(errorHandler);

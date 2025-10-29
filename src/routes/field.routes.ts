@@ -8,6 +8,7 @@ import { validateData } from '@/middlewares/validation.middleware';
 import { CreateFieldDto, UpdateFieldDto } from '@/dtos/field.dto';
 import { CreatePlotDto } from '@/dtos/plot.dto';
 import { PlotController } from '@/controllers/plot.controller';
+import { mergeParamsToBody } from '@/middlewares/merge-params.middleware';
 
 export const createFieldRoutes = (dataSource: DataSource): Router => {
   const router = Router();
@@ -66,7 +67,8 @@ export const createFieldRoutes = (dataSource: DataSource): Router => {
    */
   nestedPlotRouter.post(
     '/', 
-    authorize(UserRole.ADMIN), 
+    authorize(UserRole.ADMIN),
+    mergeParamsToBody(['fieldId']),
     validateData(CreatePlotDto), 
     plotController.createPlot
   );

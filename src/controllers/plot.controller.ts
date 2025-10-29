@@ -17,9 +17,6 @@ export class PlotController {
         return res.status(400).json({ message: 'Field ID is required' });
       }
 
-      // Agregar fieldId al cuerpo de la solicitud
-      req.body.fieldId = fieldId;
-
       const plotData: CreatePlotDto = req.body;
       const newPlot = await this.plotService.createPlot(plotData);
       return res.status(201).json(newPlot);

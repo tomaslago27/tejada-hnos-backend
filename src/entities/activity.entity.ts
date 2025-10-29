@@ -1,5 +1,5 @@
 import { ActivityType } from "@/enums";
-import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, JoinColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, JoinColumn } from "typeorm";
 import { WorkOrder } from "./work-order.entity";
 import { ActivityDetails } from "@/types";
 import { InputUsage } from "./input-usage.entity";
@@ -23,7 +23,7 @@ export class Activity {
   executionDate: Date;
 
   @Column('decimal', { precision: 5, scale: 2, default: 0 })
-  hoursWorked: number; // Horas-hombre para esta tarea
+  hoursWorked: number;
 
   @Column({ type: 'jsonb', default: {} })
   details: ActivityDetails;
@@ -36,4 +36,7 @@ export class Activity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }
