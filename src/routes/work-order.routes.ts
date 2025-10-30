@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { WorkOrderController } from '@controllers/work-order.controller';
 import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
+import { authorizeFieldAccess } from '@middlewares/authorize-field-access.middleware';
 import { validateData } from '@/middlewares/validation.middleware';
 import { CreateWorkOrderDto, UpdateWorkOrderDto } from '@dtos/work-order.dto';
 import { UserRole } from '@/enums';
@@ -23,24 +24,28 @@ export const createWorkOrderRoutes = (dataSource: DataSource): Router => {
    * @desc    Obtener todas las órdenes de trabajo (con filtros opcionales)
    * @query   ?status=PENDING&assignedToId=123&plotId=456&startDate=2025-01-01&endDate=2025-12-31
    * @access  Logged-in users
+   * @security Aplica filtros según rol (ADMIN: todo, CAPATAZ: managedFields, OPERARIO: assignedToId)
    */
-  router.get('/', workOrderController.getAll);
+  router.get('/', authorizeFieldAccess(dataSource), workOrderController.getAll);
 
   /**
    * @route   GET /work-orders/:id
    * @desc    Obtener una orden de trabajo por su ID
    * @access  Logged-in users
+   * @security Valida acceso según rol y campos gestionados
    */
-  router.get('/:id', workOrderController.getById);
+  router.get('/:id', authorizeFieldAccess(dataSource), workOrderController.getById);
 
   /**
    * @route   POST /work-orders
    * @desc    Crear una nueva orden de trabajo
    * @access  Admin y Capataz
+   * @security Valida que las parcelas pertenezcan a campos gestionados (CAPATAZ)
    */
   router.post(
     '/',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    authorizeFieldAccess(dataSource),
     validateData(CreateWorkOrderDto),
     workOrderController.create
   );
@@ -49,10 +54,12 @@ export const createWorkOrderRoutes = (dataSource: DataSource): Router => {
    * @route   PUT /work-orders/:id
    * @desc    Actualizar una orden de trabajo por su ID
    * @access  Admin y Capataz
+   * @security Valida que el usuario tenga acceso a esta OT
    */
   router.put(
     '/:id',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    authorizeFieldAccess(dataSource),
     validateData(UpdateWorkOrderDto),
     workOrderController.update
   );
@@ -61,10 +68,12 @@ export const createWorkOrderRoutes = (dataSource: DataSource): Router => {
    * @route   DELETE /work-orders/:id
    * @desc    Eliminar una orden de trabajo (soft delete)
    * @access  Admin y Capataz
+   * @security Valida que el usuario tenga acceso a esta OT
    */
   router.delete(
     '/:id',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    authorizeFieldAccess(dataSource),
     workOrderController.delete
   );
 
@@ -72,10 +81,12 @@ export const createWorkOrderRoutes = (dataSource: DataSource): Router => {
    * @route   POST /work-orders/:id/restore
    * @desc    Restaurar una orden de trabajo eliminada
    * @access  Admin y Capataz
+   * @security Valida que el usuario tenga acceso a esta OT
    */
   router.post(
     '/:id/restore',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    authorizeFieldAccess(dataSource),
     workOrderController.restore
   );
 
@@ -99,9 +110,11 @@ export const createWorkOrderRoutes = (dataSource: DataSource): Router => {
    * @route   POST /work-orders/:workOrderId/activities
    * @desc    Crear una nueva actividad asociada a una orden de trabajo
    * @access  Logged-in users
+   * @security Valida que el usuario tenga acceso a la WorkOrder (OPERARIO: solo sus OTs, CAPATAZ: sus campos)
    */
   nestedActivitiesRouter.post(
     '/',
+    authorizeFieldAccess(dataSource),
     mergeParamsToBody(['workOrderId']),
     validateData(CreateActivityDto),
     activityController.create
@@ -111,9 +124,11 @@ export const createWorkOrderRoutes = (dataSource: DataSource): Router => {
    * @route   GET /work-orders/:workOrderId/activities
    * @desc    Obtener todas las actividades asociadas a una orden de trabajo
    * @access  Logged-in users
+   * @security Valida que el usuario tenga acceso a la WorkOrder
    */
   nestedActivitiesRouter.get(
     '/',
+    authorizeFieldAccess(dataSource),
     activityController.getAll
   );
 

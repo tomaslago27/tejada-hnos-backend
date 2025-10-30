@@ -43,6 +43,11 @@ export class WorkOrderController {
         filters.endDate = new Date(req.query.endDate as string);
       }
 
+      // Agregar managedFieldIds desde el middleware de autorización (para CAPATAZ)
+      if (req.managedFieldIds && req.managedFieldIds.length > 0) {
+        filters.managedFieldIds = req.managedFieldIds;
+      }
+
       // Pasar filtros solo si hay al menos uno definido
       const workOrders = await this.workOrderService.findAll(
         Object.keys(filters).length > 0 ? filters : undefined

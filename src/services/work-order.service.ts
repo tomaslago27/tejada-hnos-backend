@@ -101,6 +101,17 @@ export class WorkOrderService {
           endDate: filters.endDate 
         });
       }
+
+      // Filtro especial para CAPATAZ: Solo OTs de parcelas en campos gestionados o asignadas a él
+      if (filters.managedFieldIds && filters.managedFieldIds.length > 0) {
+        queryBuilder.andWhere(
+          '(plots.fieldId IN (:...managedFieldIds) OR workOrder.assignedToId = :assignedToId)',
+          { 
+            managedFieldIds: filters.managedFieldIds,
+            assignedToId: filters.assignedToId // Ya debe estar incluido en filters para CAPATAZ
+          }
+        );
+      }
     }
 
     // Ordenar por fecha creada (más recientes primero) por defecto

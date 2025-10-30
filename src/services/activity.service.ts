@@ -78,6 +78,7 @@ export class ActivityService {
         const queryBuilder = this.activityRepository
             .createQueryBuilder('activity')
             .leftJoinAndSelect('activity.workOrder', 'workOrder')
+            .leftJoinAndSelect('workOrder.plots', 'plots')
             .leftJoinAndSelect('activity.inputsUsed', 'inputsUsed')
             .leftJoinAndSelect('inputsUsed.input', 'input');
 
@@ -104,6 +105,24 @@ export class ActivityService {
                 queryBuilder.andWhere('activity.executionDate <= :endDate', {
                     endDate: filters.endDate
                 });
+            }
+
+            // Filtro para OPERARIO: Solo actividades de OTs asignadas a él
+            if (filters.assignedToId) {
+                queryBuilder.andWhere('workOrder.assignedToId = :assignedToId', {
+                    assignedToId: filters.assignedToId
+                });
+            }
+
+            // Filtro especial para CAPATAZ: Solo actividades de OTs con parcelas en campos gestionados o asignadas a él
+            if (filters.managedFieldIds && filters.managedFieldIds.length > 0) {
+                queryBuilder.andWhere(
+                    '(plots.fieldId IN (:...managedFieldIds) OR workOrder.assignedToId = :assignedToId)',
+                    { 
+                        managedFieldIds: filters.managedFieldIds,
+                        assignedToId: filters.assignedToId
+                    }
+                );
             }
         }
 
