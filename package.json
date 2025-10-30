@@ -21,7 +21,9 @@
     "dev": "nodemon --watch src --exec ts-node -r tsconfig-paths/register src/index.ts",
     "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/index.js",
-    "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts"
+    "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
+    "seed:test": "ts-node -r tsconfig-paths/register src/scripts/seed-test-data.ts",
+    "seed:clean": "ts-node -r tsconfig-paths/register src/scripts/clean-test-data.ts"
   },
   "keywords": [],
   "author": "",
