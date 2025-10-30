@@ -47,10 +47,24 @@ export const createFieldRoutes = (dataSource: DataSource): Router => {
 
   /**
    * @route   DELETE /fields/:id
-   * @desc    Eliminar un campo por su ID
+   * @desc    Eliminar un campo por su ID (soft delete)
    * @access  Admin only
    */
   router.delete('/:id', authorize(UserRole.ADMIN), fieldController.deleteField);
+
+  /**
+   * @route   POST /fields/:id/restore
+   * @desc    Restaurar un campo eliminado
+   * @access  Admin only
+   */
+  router.post('/:id/restore', authorize(UserRole.ADMIN), fieldController.restoreField);
+
+  /**
+   * @route   DELETE /fields/:id/permanent
+   * @desc    Eliminar permanentemente un campo (hard delete)
+   * @access  Admin only
+   */
+  router.delete('/:id/permanent', authorize(UserRole.ADMIN), fieldController.hardDeleteField);
 
   // -----------------------------------------------------------------
   // --- SUB-ROUTER para PLOTS ANIDADAS: /fields/:fieldId/plots ---

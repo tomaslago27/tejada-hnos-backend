@@ -36,10 +36,24 @@ export const createPlotRoutes = (dataSource: DataSource): Router => {
 
   /**
    * @route   DELETE /plots/:id
-   * @desc    Eliminar una parcela por su ID
+   * @desc    Eliminar una parcela por su ID (soft delete)
    * @access  Admin only
    */
   router.delete('/:id', authorize(UserRole.ADMIN), plotController.deletePlot);
+
+  /**
+   * @route   POST /plots/:id/restore
+   * @desc    Restaurar una parcela eliminada
+   * @access  Admin only
+   */
+  router.post('/:id/restore', authorize(UserRole.ADMIN), plotController.restorePlot);
+
+  /**
+   * @route   DELETE /plots/:id/permanent
+   * @desc    Eliminar permanentemente una parcela (hard delete)
+   * @access  Admin only
+   */
+  router.delete('/:id/permanent', authorize(UserRole.ADMIN), plotController.hardDeletePlot);
 
   return router;
 }
