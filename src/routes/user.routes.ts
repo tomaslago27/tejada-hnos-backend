@@ -14,10 +14,54 @@ export const createUserRoutes = (dataSource: DataSource): Router => {
   // Proteger todas las rutas de usuario con autenticación
   router.use(authenticate);
 
-  // Rutas específicas
+  /**
+   * @route   GET /users
+   * @desc    Obtener todos los usuarios
+   * @access  Admin only
+   */
   router.get('/', authorize(UserRole.ADMIN), userController.getAll);
+
+  /**
+   * @route   GET /users/:id
+   * @desc    Obtener un usuario por su ID
+   * @access  Admin only
+   */
   router.get('/:id', authorize(UserRole.ADMIN), userController.getById);
+
+  /**
+   * @route   POST /users
+   * @desc    Crear un nuevo usuario
+   * @access  Admin only
+   */
   router.post('/', authorize(UserRole.ADMIN), validateData(CreateUserDto), userController.create);
+
+  /**
+   * @route   PUT /users/:id
+   * @desc    Actualizar un usuario por su ID
+   * @access  Admin only
+   */
+  router.put('/:id', authorize(UserRole.ADMIN), userController.update);
+
+  /**
+   * @route   DELETE /users/:id
+   * @desc    Eliminar un usuario (soft delete)
+   * @access  Admin only
+   */
+  router.delete('/:id', authorize(UserRole.ADMIN), userController.delete);
+
+  /**
+   * @route   POST /users/:id/restore
+   * @desc    Restaurar un usuario eliminado
+   * @access  Admin only
+   */
+  router.post('/:id/restore', authorize(UserRole.ADMIN), userController.restore);
+
+  /**
+   * @route   DELETE /users/:id/permanent
+   * @desc    Eliminar permanentemente un usuario (hard delete)
+   * @access  Admin only
+   */
+  router.delete('/:id/permanent', authorize(UserRole.ADMIN), userController.hardDelete);
 
   return router;
 };

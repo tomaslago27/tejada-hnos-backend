@@ -7,6 +7,8 @@ import {
   AuthResponse, 
   TokenPayload 
 } from '@interfaces/auth.interface';
+import { HttpException } from '@/exceptions/HttpException';
+import { StatusCodes } from 'http-status-codes';
 
 export class AuthService {
   private userRepository: Repository<User>;
@@ -17,6 +19,8 @@ export class AuthService {
 
   /**
    * Iniciar sesión
+   * @param data LoginRequest
+   * @returns Promise<AuthResponse>
    */
   async login(data: LoginRequest): Promise<AuthResponse> {
     // Buscar usuario con password
@@ -26,16 +30,14 @@ export class AuthService {
       .where('user.email = :email', { email: data.email })
       .getOne();
 
-    if (!user) {
-      throw new Error('Credenciales inválidas');
-    }
+    if (!user) 
+      throw new HttpException(StatusCodes.UNAUTHORIZED, 'Credenciales inválidas');
 
     // Verificar contraseña
     const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
 
-    if (!isPasswordValid) {
-      throw new Error('Credenciales inválidas');
-    }
+    if (!isPasswordValid) 
+      throw new HttpException(StatusCodes.UNAUTHORIZED, 'Credenciales inválidas');
 
     // Generar tokens
     const tokens = this.generateTokens(user);
@@ -54,6 +56,8 @@ export class AuthService {
 
   /**
    * Refrescar el access token usando el refresh token
+   * @param token string
+   * @returns Promise<{ accessToken: string; refreshToken: string }>
    */
   async refreshToken(token: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
@@ -65,21 +69,22 @@ export class AuthService {
         where: { id: payload.userId }
       });
 
-      if (!user) {
-        throw new Error('Usuario no encontrado');
-      }
+      if (!user) 
+        throw new HttpException(StatusCodes.UNAUTHORIZED, 'Token inválido');
 
       // Generar nuevos tokens
       const tokens = this.generateTokens(user);
 
       return tokens;
     } catch (error) {
-      throw new Error('Refresh token inválido o expirado');
+      throw new HttpException(StatusCodes.UNAUTHORIZED, 'Refresh token inválido o expirado');
     }
   }
 
   /**
    * Generar access token y refresh token
+   * @param user User
+   * @returns { accessToken: string; refreshToken: string }
    */
   private generateTokens(user: User): { accessToken: string; refreshToken: string } {
     const payload: TokenPayload = {
@@ -101,6 +106,8 @@ export class AuthService {
 
   /**
    * Verificar access token
+   * @param token string
+   * @returns TokenPayload
    */
   verifyAccessToken(token: string): TokenPayload {
     return JwtUtils.verifyAccessToken(token);

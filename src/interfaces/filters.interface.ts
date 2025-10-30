@@ -20,3 +20,22 @@ export interface ActivityFilters {
   startDate?: Date;
   endDate?: Date;
 }
+
+/**
+ * Interfaz para filtros de búsqueda de campos
+ */
+export interface FieldFilters {
+  managerId?: string;
+  minArea?: number;
+  maxArea?: number;
+}
+
+/**
+ * Interfaz para filtros de búsqueda de parcelas
+ */
+export interface PlotFilters {
+  fieldId?: string;
+  varietyId?: string;
+  minArea?: number;
+  maxArea?: number;
+}

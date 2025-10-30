@@ -1,7 +1,9 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { UserService } from '@services/user.service';
+import { CreateUserDto, UpdateUserDto } from '@/dtos/user.dto';
+import { HttpException } from '@/exceptions/HttpException';
+import { StatusCodes } from 'http-status-codes';
 import { DataSource } from 'typeorm';
-import { CreateUserDto } from '@/dtos/user.dto';
 
 export class UserController {
   private userService: UserService;
@@ -11,57 +13,156 @@ export class UserController {
   }
 
   /**
+   * GET /users
    * Obtener todos los usuarios
    */
-  getAll = async (req: Request, res: Response): Promise<void> => {
+  public getAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const users = await this.userService.getAll();
-      res.status(200).json(users);
-    } catch (error) {
-      res.status(500).json({
-        message: error instanceof Error ? error.message : 'Error al obtener usuarios',
+
+      res.status(StatusCodes.OK).json({
+        data: users,
+        count: users.length,
+        message: 'Usuarios obtenidos exitosamente.',
       });
+    } catch (error) {
+      next(error);
     }
   };
 
   /**
-   * Obtener un usuario por ID
+   * GET /users/:id
+   * Obtener un usuario por su ID
    */
-  getById = async (req: Request, res: Response): Promise<void> => {
+  public getById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
+
       if (!id) {
-        res.status(400).json({ message: 'Se requiere el ID del usuario' });
-        return;
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID del usuario es requerido.');
       }
+
       const user = await this.userService.getById(id);
 
-      if (!user) {
-        res.status(404).json({ message: 'Usuario no encontrado' });
-        return;
-      }
-
-      res.status(200).json(user);
-    } catch (error) {
-      res.status(500).json({
-        message: error instanceof Error ? error.message : 'Error al obtener usuario',
+      res.status(StatusCodes.OK).json({
+        data: user,
+        message: 'Usuario obtenido exitosamente.',
       });
+    } catch (error) {
+      next(error);
     }
   };
 
   /**
+   * POST /users
    * Crear un nuevo usuario
    */
-  create = async (req: Request, res: Response): Promise<void> => {
+  public create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data: CreateUserDto = req.body;
+      const userData: CreateUserDto = req.body;
+      const newUser = await this.userService.create(userData);
 
-      const newUser = await this.userService.create(data);
-      res.status(201).json({ message: 'Usuario creado', user: newUser });
-    } catch (error) {
-      res.status(400).json({
-        message: error instanceof Error ? error.message : 'Error al crear usuario',
+      res.status(StatusCodes.CREATED).json({
+        data: newUser,
+        message: 'Usuario creado exitosamente.',
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /users/:id
+   * Actualizar un usuario por su ID
+   */
+  public update = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const userData: UpdateUserDto = req.body;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID del usuario es requerido.');
+      }
+
+      const updatedUser = await this.userService.update(id, userData);
+
+      res.status(StatusCodes.OK).json({
+        data: updatedUser,
+        message: 'Usuario actualizado exitosamente.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /users/:id
+   * Eliminar un usuario (soft delete)
+   */
+  public delete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID del usuario es requerido.');
+      }
+
+      const deletedUser = await this.userService.delete(id);
+
+      res.status(StatusCodes.OK).json({
+        data: deletedUser,
+        message: 'Usuario eliminado exitosamente.',
+        canRestore: true,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /users/:id/restore
+   * Restaurar un usuario eliminado
+   */
+  public restore = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID del usuario es requerido.');
+      }
+
+      const restoredUser = await this.userService.restore(id);
+
+      res.status(StatusCodes.OK).json({
+        data: restoredUser,
+        message: 'Usuario restaurado exitosamente.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /users/:id/permanent
+   * Eliminar permanentemente un usuario (hard delete)
+   */
+  public hardDelete = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID del usuario es requerido.');
+      }
+
+      const deletedUser = await this.userService.hardDelete(id);
+
+      res.status(StatusCodes.OK).json({
+        data: deletedUser,
+        message: 'Usuario eliminado permanentemente.',
+        canRestore: false,
+      });
+    } catch (error) {
+      next(error);
     }
   };
 }
