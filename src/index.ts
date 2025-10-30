@@ -11,6 +11,7 @@ import { createFieldRoutes } from "@routes/field.routes";
 import { createPlotRoutes } from "@routes/plot.routes";
 import { createActivityRoutes } from "@/routes/activity.routes";
 import { createWorkOrderRoutes } from "./routes/work-order.routes";
+import { createHarvestLotRoutes } from "@routes/harvest-lot.routes";
 
 const startServer = async () => {
   try {
@@ -20,7 +21,7 @@ const startServer = async () => {
 
     // 2. Configurar Middlewares
     app.use(express.json());
-
+      
     // 3. Configurar Rutas, inyectando el dataSource
     app.use("/auth", createAuthRoutes(dataSource));
     app.use("/users", createUserRoutes(dataSource));
@@ -28,6 +29,7 @@ const startServer = async () => {
     app.use("/plots", createPlotRoutes(dataSource));
     app.use("/work-orders", createWorkOrderRoutes(dataSource));
     app.use("/activities", createActivityRoutes(dataSource));
+    app.use("/harvest-lots", createHarvestLotRoutes(dataSource));
 
     // 4. Configurar Error Handler (al final)
     app.use(errorHandler);
