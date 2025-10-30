@@ -71,6 +71,13 @@ export class FieldService {
           maxArea: filters.maxArea
         });
       }
+
+      // Filtro especial para CAPATAZ: Solo campos gestionados por él
+      if (filters.managedFieldIds && filters.managedFieldIds.length > 0) {
+        queryBuilder.andWhere('field.id IN (:...managedFieldIds)', {
+          managedFieldIds: filters.managedFieldIds
+        });
+      }
     }
 
     queryBuilder.orderBy('field.createdAt', 'DESC');

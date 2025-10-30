@@ -2,11 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtUtils } from '@utils/jwt.utils';
 import { TokenPayload } from '@interfaces/auth.interface';
 
-// Extender la interfaz Request para incluir user
+// Extender la interfaz Request para incluir user y managedFieldIds
 declare global {
   namespace Express {
     interface Request {
       user?: TokenPayload;
+      managedFieldIds?: string[];
     }
   }
 }

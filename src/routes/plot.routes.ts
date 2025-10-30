@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { PlotController } from '@controllers/plot.controller';
 import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
+import { authorizeFieldAccess } from '@middlewares/authorize-field-access.middleware';
 import { UserRole } from '@/enums/index';
 import { DataSource } from 'typeorm';
 import { validateData } from '@/middlewares/validation.middleware';
@@ -24,8 +25,9 @@ export const createPlotRoutes = (dataSource: DataSource): Router => {
    * @route   GET /plots/:id
    * @desc    Obtener una parcela por su ID
    * @access  Logged-in users
+   * @security Valida acceso según campos gestionados
    */
-  router.get('/:id', plotController.getPlotById);
+  router.get('/:id', authorizeFieldAccess(dataSource), plotController.getPlotById);
 
   /**
    * @route   PUT /plots/:id

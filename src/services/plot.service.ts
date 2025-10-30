@@ -99,6 +99,13 @@ export class PlotService {
           maxArea: filters.maxArea
         });
       }
+
+      // Filtro especial para CAPATAZ: Solo parcelas de campos gestionados
+      if (filters.managedFieldIds && filters.managedFieldIds.length > 0) {
+        queryBuilder.andWhere('plot.fieldId IN (:...managedFieldIds)', {
+          managedFieldIds: filters.managedFieldIds
+        });
+      }
     }
 
     queryBuilder.orderBy('plot.createdAt', 'DESC');

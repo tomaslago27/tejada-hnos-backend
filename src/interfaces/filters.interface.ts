@@ -9,6 +9,7 @@ export interface WorkOrderFilters {
   plotId?: string;
   startDate?: Date;
   endDate?: Date;
+  managedFieldIds?: string[]; // Para filtrar por campos gestionados (CAPATAZ)
 }
 
 /**
@@ -19,6 +20,8 @@ export interface ActivityFilters {
   type?: ActivityType;
   startDate?: Date;
   endDate?: Date;
+  managedFieldIds?: string[]; // Para filtrar por campos gestionados (CAPATAZ)
+  assignedToId?: string; // Para filtrar por OTs asignadas (OPERARIO)
 }
 
 /**
@@ -28,6 +31,7 @@ export interface FieldFilters {
   managerId?: string;
   minArea?: number;
   maxArea?: number;
+  managedFieldIds?: string[]; // Para filtrar por campos gestionados (CAPATAZ)
 }
 
 /**
@@ -38,4 +42,5 @@ export interface PlotFilters {
   varietyId?: string;
   minArea?: number;
   maxArea?: number;
+  managedFieldIds?: string[]; // Para filtrar por campos gestionados (CAPATAZ)
 }
