@@ -45,7 +45,7 @@ public async restore(id: string): Promise<WorkOrder> {
   });
   
   if (!workOrder) {
-    throw new HttpException(404, "Not found");
+    throw new HttpException(StatusCodes.NOT_FOUND, "Not found");
   }
   
   return await this.workOrderRepository.recover(workOrder);
@@ -68,8 +68,8 @@ export class WorkOrderController {
       // 1. Retornar la entidad eliminada
       // 2. Hacer logging con datos reales
       // 3. Dar feedback al usuario
-      
-      return res.status(200).json({
+
+      return res.status(StatusCodes.OK).json({
         message: 'Work order deleted successfully',
         data: deleted,
         // Útil para "undo" en el frontend
@@ -87,8 +87,8 @@ export class WorkOrderController {
   public restore = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const restored = await this.service.restore(req.params.id);
-      
-      return res.status(200).json({
+
+      return res.status(StatusCodes.OK).json({
         message: 'Work order restored successfully',
         data: restored
       });
@@ -104,8 +104,8 @@ export class WorkOrderController {
   public hardDelete = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const deleted = await this.service.hardDelete(req.params.id);
-      
-      return res.status(200).json({
+
+      return res.status(StatusCodes.OK).json({
         message: 'Work order permanently deleted',
         data: deleted,
         canRestore: false
@@ -130,7 +130,7 @@ public async delete(id: string): Promise<void> {
 }
 
 // Controller
-return res.status(204).send(); // 204 No Content - vacío
+return res.status(StatusCodes.NO_CONTENT).send(); // 204 No Content - vacío
 ```
 
 **Respuesta al cliente:**
@@ -148,9 +148,10 @@ public async delete(id: string): Promise<WorkOrder> {
 }
 
 // Controller
-return res.status(200).json({
+return res.status(StatusCodes.OK).json({
   message: 'Deleted successfully',
-  data: deleted
+  data: deleted,
+  canRestore: true
 });
 ```
 
@@ -260,7 +261,7 @@ public async delete(id: string): Promise<WorkOrder> {
 // Controller
 try {
   const deleted = await this.service.delete(id);
-  return res.status(200).json({ data: deleted });
+  return res.status(StatusCodes.OK).json({ data: deleted });
 } catch (error) {
   // HttpException es atrapada por el middleware de errores
   next(error);
@@ -290,11 +291,11 @@ public async restore(id: string): Promise<WorkOrder> {
   });
   
   if (!workOrder) {
-    throw new HttpException(404, "Work order not found");
+    throw new HttpException(StatusCodes.NOT_FOUND, "Work order not found");
   }
   
   if (!workOrder.deletedAt) {
-    throw new HttpException(400, "Work order is not deleted");
+    throw new HttpException(StatusCodes.BAD_REQUEST, "Work order is not deleted");
   }
   
   return await this.workOrderRepository.recover(workOrder);
@@ -307,8 +308,8 @@ public async restore(id: string): Promise<WorkOrder> {
 public delete = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const deleted = await this.service.delete(req.params.id);
-    
-    return res.status(200).json({
+
+    return res.status(StatusCodes.OK).json({
       message: 'Work order deleted successfully',
       data: deleted,
       actions: {
@@ -323,8 +324,8 @@ public delete = async (req: Request, res: Response, next: NextFunction) => {
 public restore = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const restored = await this.service.restore(req.params.id);
-    
-    return res.status(200).json({
+
+    return res.status(StatusCodes.OK).json({
       message: 'Work order restored successfully',
       data: restored
     });

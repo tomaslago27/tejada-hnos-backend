@@ -44,3 +44,23 @@ export interface PlotFilters {
   maxArea?: number;
   managedFieldIds?: string[]; // Para filtrar por campos gestionados (CAPATAZ)
 }
+
+/**
+ * Interfaz para filtros de búsqueda de clientes
+ */
+export interface CustomerFilters {
+  searchTerm?: string;
+  minTotalPurchases?: number;
+  maxTotalPurchases?: number;
+  withDeleted?: boolean;
+}
+
+/**
+ * Interfaz para filtros de búsqueda de proveedores
+ */
+export interface SupplierFilters {
+  searchTerm?: string;
+  minTotalSupplied?: number;
+  maxTotalSupplied?: number;
+  withDeleted?: boolean;
+}
