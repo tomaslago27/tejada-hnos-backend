@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PlotController } from '@controllers/plot.controller';
+import { HarvestLotController } from '@controllers/harvest-lot.controller';
 import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
 import { authorizeFieldAccess } from '@middlewares/authorize-field-access.middleware';
@@ -11,6 +12,7 @@ import { UpdatePlotDto } from '@/dtos/plot.dto';
 export const createPlotRoutes = (dataSource: DataSource): Router => {
   const router = Router();
   const plotController = new PlotController(dataSource);
+  const harvestLotController = new HarvestLotController(dataSource);
 
   router.use(authenticate);
 
@@ -28,6 +30,17 @@ export const createPlotRoutes = (dataSource: DataSource): Router => {
    * @security Valida acceso según campos gestionados
    */
   router.get('/:id', authorizeFieldAccess(dataSource), plotController.getPlotById);
+
+  /**
+   * @route   GET /plots/:id/harvest-lots
+   * @desc    Obtener todos los lotes de cosecha de una parcela específica
+   * @access  ADMIN, CAPATAZ
+   */
+  router.get(
+    '/:id/harvest-lots',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    harvestLotController.getHarvestLotsByPlot
+  );
 
   /**
    * @route   PUT /plots/:id
