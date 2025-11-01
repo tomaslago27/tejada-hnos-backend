@@ -197,4 +197,26 @@ export class HarvestLotController {
       next(error);
     }
   };
+
+  /**
+   * DELETE /harvest-lots/:id/permanent
+   * Eliminar permanentemente un lote de cosecha (hard delete)
+   */
+  public hardDeleteHarvestLot = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID del lote es obligatorio.');
+      }
+
+      await this.harvestLotService.hardDelete(id);
+
+      res.status(StatusCodes.OK).json({
+        message: 'Lote de cosecha eliminado permanentemente.'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

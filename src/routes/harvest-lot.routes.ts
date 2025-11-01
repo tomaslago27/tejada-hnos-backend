@@ -82,5 +82,16 @@ export const createHarvestLotRoutes = (dataSource: DataSource): Router => {
     harvestLotController.restoreHarvestLot
   );
 
+  /**
+   * @route   DELETE /harvest-lots/:id/permanent
+   * @desc    Eliminar permanentemente un lote de cosecha (hard delete)
+   * @access  ADMIN only
+   */
+  router.delete(
+    '/:id/permanent',
+    authorize(UserRole.ADMIN),
+    harvestLotController.hardDeleteHarvestLot
+  );
+
   return router;
 };
