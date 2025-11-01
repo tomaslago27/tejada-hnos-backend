@@ -175,12 +175,12 @@ export class HarvestLotController {
   };
 
   /**
-   * GET /plots/:plotId/harvest-lots
+   * GET /plots/:id/harvest-lots
    * Obtener lotes de cosecha por parcela
    */
   public getHarvestLotsByPlot = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { plotId } = req.params;
+      const { id: plotId } = req.params;
 
       if (!plotId) {
         throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la parcela es obligatorio.');

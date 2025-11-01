@@ -84,27 +84,3 @@ export const createHarvestLotRoutes = (dataSource: DataSource): Router => {
 
   return router;
 };
-
-/**
- * Rutas anidadas para lotes de cosecha por parcela
- * Estas rutas se montan en /plots/:plotId/harvest-lots
- */
-export const createPlotHarvestLotRoutes = (dataSource: DataSource): Router => {
-  const router = Router({ mergeParams: true });
-  const harvestLotController = new HarvestLotController(dataSource);
-
-  router.use(authenticate);
-
-  /**
-   * @route   GET /plots/:plotId/harvest-lots
-   * @desc    Obtener todos los lotes de cosecha de una parcela específica
-   * @access  ADMIN, CAPATAZ
-   */
-  router.get(
-    '/',
-    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
-    harvestLotController.getHarvestLotsByPlot
-  );
-
-  return router;
-};
