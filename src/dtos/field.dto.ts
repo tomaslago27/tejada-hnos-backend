@@ -26,16 +26,20 @@ export class CreateFieldDto {
 }
 
 export class UpdateFieldDto {
+  @IsOptional()
   @IsString()
   @MinLength(3, { message: 'El nombre debe tener al menos 3 caracteres.' })
   name?: string;
 
+  @IsOptional()
   @IsString()
   address?: string;
 
+  @IsOptional()
   @IsNumber()
   area?: number;
 
+  @IsOptional()
   @ValidateNested()
   @Type(() => LocationDto)
   location?: LocationDto;

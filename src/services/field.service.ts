@@ -5,6 +5,7 @@ import { CreateFieldDto, UpdateFieldDto } from "@dtos/field.dto";
 import { FieldFilters } from "@/interfaces/filters.interface";
 import { HttpException } from "../exceptions/HttpException";
 import { DataSource, Repository } from "typeorm";
+import { UserRole } from "@/enums";
 
 export class FieldService {
   private fieldRepository: Repository<Field>;
@@ -30,6 +31,14 @@ export class FieldService {
       if (!manager) {
         throw new HttpException(StatusCodes.NOT_FOUND, "El usuario encargado no fue encontrado.");
       }
+
+      if (manager.role !== UserRole.CAPATAZ) {
+        throw new HttpException(
+          StatusCodes.BAD_REQUEST,
+          "El usuario asignado como encargado no tiene el rol de CAPATAZ."
+        );
+      }
+
       newField.managerId = managerId;
       newField.manager = manager;
     }
@@ -124,6 +133,14 @@ export class FieldService {
         if (!manager) {
           throw new HttpException(StatusCodes.NOT_FOUND, "El usuario encargado no fue encontrado.");
         }
+
+        if (manager.role !== UserRole.CAPATAZ) {
+          throw new HttpException(
+            StatusCodes.BAD_REQUEST,
+            "El usuario asignado como encargado no tiene el rol de CAPATAZ."
+          );
+        }
+
         field.managerId = managerId;
         field.manager = manager;
       }
