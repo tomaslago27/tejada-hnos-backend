@@ -11,9 +11,9 @@ export class CreatePlotDto {
   @IsNotEmpty({ message: 'El área es obligatoria' })
   area: number;
 
+  @IsOptional()
   @IsUUID('4', { message: 'El ID de la variedad debe ser un UUID válido' })
-  @IsNotEmpty({ message: 'El ID de la variedad no puede estar vacío' })
-  varietyId: string;
+  varietyId?: string;
 
   @IsOptional()
   @IsISO8601({}, { message: 'La fecha de plantación debe ser una fecha válida' })
