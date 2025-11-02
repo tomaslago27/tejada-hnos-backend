@@ -1,4 +1,4 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { PurchaseOrder } from '@entities/purchase-order.entity';
 import { PurchaseOrderDetail } from '@entities/purchase-order-detail.entity';
 import { Supplier } from '@entities/supplier.entity';
@@ -24,8 +24,41 @@ export class PurchaseOrderService {
   }
 
   public async create(data: CreatePurchaseOrderDto): Promise<PurchaseOrder> {
-    // Pendiente de implementación
-    throw new Error('Pendiente de implementación');
+    const supplier = await this.supplierRepository.findOne({ where: { id: data.supplierId } });
+
+    if (!supplier) {
+      throw new HttpException(StatusCodes.NOT_FOUND, 'Proveedor no encontrado');
+    }
+
+    const detailInputIds = data.details?.map(detail => detail.inputId) ?? [];
+    const uniqueInputIds = [...new Set(detailInputIds)];
+
+    if (uniqueInputIds.length > 0) {
+      const inputs = await this.inputRepository.findBy({ id: In(uniqueInputIds) });
+
+      if (inputs.length !== uniqueInputIds.length) {
+        throw new HttpException(StatusCodes.NOT_FOUND, 'Uno o más insumos no fueron encontrados');
+      }
+    }
+
+    const totalAmount = (data.details ?? []).reduce((acc, detail) => {
+      const quantity = Number(detail.quantity);
+      const unitPrice = Number(detail.unitPrice);
+      return acc + quantity * unitPrice;
+    }, 0);
+
+    const purchaseOrder = this.purchaseOrderRepository.create({
+      ...data,
+      totalAmount,
+      supplier,
+      details: (data.details ?? []).map(detail =>
+        this.purchaseOrderDetailRepository.create(detail)
+      ),
+    });
+
+    const savedPurchaseOrder = await this.purchaseOrderRepository.save(purchaseOrder);
+
+    return this.findById(savedPurchaseOrder.id);
   }
 
   public async findAll(): Promise<PurchaseOrder[]> {
