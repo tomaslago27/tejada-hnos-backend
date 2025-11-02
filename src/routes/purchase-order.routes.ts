@@ -5,6 +5,8 @@ import { PurchaseOrderService } from '@services/purchase-order.service';
 import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
 import { UserRole } from '@/enums';
+import { validateData } from '@middlewares/validation.middleware';
+import { CreatePurchaseOrderDto } from '@dtos/purchase-order.dto';
 
 export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
   const router = Router();
@@ -23,6 +25,13 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
     '/:id',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
     purchaseOrderController.getById
+  );
+
+  router.post(
+    '/',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    validateData(CreatePurchaseOrderDto),
+    purchaseOrderController.create
   );
 
   return router;

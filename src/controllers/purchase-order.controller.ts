@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { PurchaseOrderService } from '@services/purchase-order.service';
 import { HttpException } from '@/exceptions/HttpException';
 import { isValidUUID } from '@/utils/validation.utils';
+import { CreatePurchaseOrderDto } from '@dtos/purchase-order.dto';
 
 export class PurchaseOrderController {
   constructor(private readonly purchaseOrderService: PurchaseOrderService) {}
@@ -38,6 +39,20 @@ export class PurchaseOrderController {
       res.status(StatusCodes.OK).json({
         data: purchaseOrder,
         message: 'Orden de compra obtenida exitosamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const data: CreatePurchaseOrderDto = req.body;
+      const purchaseOrder = await this.purchaseOrderService.create(data);
+
+      res.status(StatusCodes.CREATED).json({
+        data: purchaseOrder,
+        message: 'Orden de compra creada exitosamente',
       });
     } catch (error) {
       next(error);
