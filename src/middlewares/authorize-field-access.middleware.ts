@@ -102,6 +102,20 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
         // Si no tiene campos gestionados, solo ve sus OTs asignadas (comportamiento de OPERARIO)
         if (managedFieldIds.length === 0) {
           req.requiredAssignedToId = userId;
+
+          // Para POST: Forzar auto-asignación en creación de WorkOrders
+          if (req.method === 'POST' && req.path.includes('/work-orders')) {
+            if (req.body && !req.body.assignedToUserId) {
+              // Auto-asignar al capataz si no especifica usuario
+              req.body.assignedToUserId = userId;
+            } else if (req.body.assignedToUserId && req.body.assignedToUserId !== userId) {
+              throw new HttpException(
+                StatusCodes.FORBIDDEN,
+                'Un capataz sin campos gestionados solo puede crear órdenes asignadas a sí mismo'
+              );
+            }
+          }
+          
           return next();
         }
 
