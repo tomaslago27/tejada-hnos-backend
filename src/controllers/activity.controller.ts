@@ -39,15 +39,17 @@ export class ActivityController {
         filters.endDate = new Date(req.query.endDate as string);
       }
 
-      // Agregar assignedToId desde query o desde el middleware (OPERARIO)
-      if (req.query.assignedToId) {
+      // Priorizar requiredAssignedToId (forzado por middleware) sobre query param
+      if (req.requiredAssignedToId) {
+        filters.assignedToId = req.requiredAssignedToId;
+      } else if (req.query.assignedToId) {
         filters.assignedToId = req.query.assignedToId as string;
       }
 
       // Agregar managedFieldIds desde el middleware de autorización (para CAPATAZ)
       if (req.managedFieldIds && req.managedFieldIds.length > 0) {
         filters.managedFieldIds = req.managedFieldIds;
-        // Para CAPATAZ, también necesitamos el assignedToId
+        // CAPATAZ necesita su userId para la cláusula OR en el servicio
         if (req.user?.userId) {
           filters.assignedToId = req.user.userId;
         }

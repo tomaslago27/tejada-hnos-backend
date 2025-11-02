@@ -27,7 +27,10 @@ export class WorkOrderController {
         filters.status = req.query.status as WorkOrderStatus;
       }
 
-      if (req.query.assignedToId) {
+      // Priorizar requiredAssignedToId (forzado por middleware) sobre query param
+      if (req.requiredAssignedToId) {
+        filters.assignedToId = req.requiredAssignedToId;
+      } else if (req.query.assignedToId) {
         filters.assignedToId = req.query.assignedToId as string;
       }
 

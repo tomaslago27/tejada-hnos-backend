@@ -57,8 +57,8 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
           );
         }
 
-        // Forzar filtro de assignedToId en queries
-        req.query.assignedToId = userId;
+        // Forzar filtro de assignedToId usando una propiedad personalizada del request
+        req.requiredAssignedToId = userId;
 
         // Si está accediendo a una OT específica por ID (o creando actividades en una OT)
         const workOrderId = req.params.id || req.params.workOrderId;
@@ -101,7 +101,7 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
       if (role === UserRole.CAPATAZ) {
         // Si no tiene campos gestionados, solo ve sus OTs asignadas (comportamiento de OPERARIO)
         if (managedFieldIds.length === 0) {
-          req.query.assignedToId = userId;
+          req.requiredAssignedToId = userId;
           return next();
         }
 
