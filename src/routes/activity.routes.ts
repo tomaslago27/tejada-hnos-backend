@@ -52,12 +52,12 @@ export const createActivityRoutes = (dataSource: DataSource): Router => {
     );
 
     /**
-     * @route   POST /activities/:id/restore
+     * @route   PATCH /activities/:id/restore
      * @desc    Restaurar una actividad eliminada por su ID
      * @access  Admin y Capataz
      * @security Valida que el usuario tenga acceso a la WorkOrder de la actividad
      */
-    router.post(
+    router.patch(
         '/:id/restore',
         authorize(UserRole.ADMIN, UserRole.CAPATAZ),
         authorizeFieldAccess(dataSource),

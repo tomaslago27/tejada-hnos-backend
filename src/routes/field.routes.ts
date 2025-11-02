@@ -55,11 +55,11 @@ export const createFieldRoutes = (dataSource: DataSource): Router => {
   router.delete('/:id', authorize(UserRole.ADMIN), fieldController.deleteField);
 
   /**
-   * @route   POST /fields/:id/restore
+   * @route   PATCH /fields/:id/restore
    * @desc    Restaurar un campo eliminado
    * @access  Admin only
    */
-  router.post('/:id/restore', authorize(UserRole.ADMIN), fieldController.restoreField);
+  router.patch('/:id/restore', authorize(UserRole.ADMIN), fieldController.restoreField);
 
   /**
    * @route   DELETE /fields/:id/permanent
