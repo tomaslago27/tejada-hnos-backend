@@ -5,6 +5,8 @@ import { Supplier } from '@entities/supplier.entity';
 import { Input } from '@entities/input.entity';
 import { GoodsReceipt } from '@entities/goods-receipt.entity';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
+import { HttpException } from '@/exceptions/HttpException';
+import { StatusCodes } from 'http-status-codes';
 
 export class PurchaseOrderService {
   private readonly purchaseOrderRepository: Repository<PurchaseOrder>;
@@ -27,13 +29,22 @@ export class PurchaseOrderService {
   }
 
   public async findAll(): Promise<PurchaseOrder[]> {
-    // Pendiente de implementación
-    throw new Error('Pendiente de implementación');
+    return this.purchaseOrderRepository.find({
+      relations: ['supplier', 'details'],
+    });
   }
 
   public async findById(id: string): Promise<PurchaseOrder> {
-    // Pendiente de implementación
-    throw new Error('Pendiente de implementación');
+    const purchaseOrder = await this.purchaseOrderRepository.findOne({
+      where: { id },
+      relations: ['supplier', 'details'],
+    });
+
+    if (!purchaseOrder) {
+      throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
+    }
+
+    return purchaseOrder;
   }
 
   public async update(id: string, data: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
