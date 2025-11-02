@@ -81,8 +81,63 @@ export class PurchaseOrderService {
   }
 
   public async update(id: string, data: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
-    // Pendiente de implementación
-    throw new Error('Pendiente de implementación');
+    const purchaseOrder = await this.purchaseOrderRepository.findOne({
+      where: { id },
+      relations: ['details', 'supplier'],
+    });
+
+    if (!purchaseOrder) {
+      throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
+    }
+
+    if (data.supplierId && data.supplierId !== purchaseOrder.supplierId) {
+      const supplier = await this.supplierRepository.findOne({ where: { id: data.supplierId } });
+
+      if (!supplier) {
+        throw new HttpException(StatusCodes.NOT_FOUND, 'Proveedor no encontrado');
+      }
+
+      purchaseOrder.supplierId = supplier.id;
+      purchaseOrder.supplier = supplier;
+    }
+
+    if (data.status !== undefined) {
+      purchaseOrder.status = data.status;
+    }
+
+    if (data.totalAmount !== undefined && (!data.details || data.details.length === 0)) {
+      purchaseOrder.totalAmount = Number(data.totalAmount);
+    }
+
+    if (data.details && data.details.length > 0) {
+      const detailInputIds = data.details.map(detail => detail.inputId);
+      const uniqueInputIds = [...new Set(detailInputIds)];
+
+      const inputs = await this.inputRepository.findBy({ id: In(uniqueInputIds) });
+
+      if (inputs.length !== uniqueInputIds.length) {
+        throw new HttpException(StatusCodes.NOT_FOUND, 'Uno o más insumos no fueron encontrados');
+      }
+
+      await this.purchaseOrderDetailRepository.delete({ purchaseOrderId: purchaseOrder.id });
+
+      purchaseOrder.details = data.details.map(detail =>
+        this.purchaseOrderDetailRepository.create({
+          ...detail,
+          purchaseOrderId: purchaseOrder.id,
+        })
+      );
+
+      purchaseOrder.totalAmount = data.details.reduce((acc, detail) => {
+        const quantity = Number(detail.quantity);
+        const unitPrice = Number(detail.unitPrice);
+        return acc + quantity * unitPrice;
+      }, 0);
+    }
+
+    await this.purchaseOrderRepository.save(purchaseOrder);
+
+    return this.findById(purchaseOrder.id);
   }
 
   public async delete(id: string): Promise<PurchaseOrder> {
