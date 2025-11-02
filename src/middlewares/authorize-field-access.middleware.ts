@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { UserRole } from '@/enums';
 import { User } from '@/entities/user.entity';
 import { Plot } from '@/entities/plot.entity';
@@ -115,8 +115,32 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
               );
             }
           }
-          
+
           return next();
+        }
+
+        // Validar plots en POST y PUT de WorkOrders (CAPATAZ con campos gestionados)
+        if ((req.method === 'POST' || req.method === 'PUT') && 
+            req.path.includes('/work-orders') && 
+            !req.path.includes('/activities')) {
+          
+          const plotIds = req.body?.plotIds;
+          
+          if (plotIds && Array.isArray(plotIds) && plotIds.length > 0) {
+            const plotRepository = dataSource.getRepository(Plot);
+            const plots = await plotRepository.findBy({ id: In(plotIds) });
+            
+            // Verificar que todas las plots pertenezcan a campos gestionados
+            const unauthorizedPlots = plots.filter(plot => !managedFieldIds.includes(plot.fieldId));
+            
+            if (unauthorizedPlots.length > 0) {
+              const plotNames = unauthorizedPlots.map(p => p.name || p.id).join(', ');
+              throw new HttpException(
+                StatusCodes.FORBIDDEN,
+                `No tienes permisos para asignar las siguientes parcelas: ${plotNames}. Solo puedes asignar parcelas de los campos que gestionas.`
+              );
+            }
+          }
         }
 
         // Si está accediendo a una OT específica por ID (GET, PUT, DELETE, o creando actividades)
