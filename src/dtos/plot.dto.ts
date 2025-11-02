@@ -47,10 +47,6 @@ export class UpdatePlotDto {
   datePlanted?: Date;
 
   @IsOptional()
-  @IsUUID('4', { message: 'El ID del campo debe ser un UUID válido' })
-  fieldId?: string;
-
-  @IsOptional()
   @ValidateNested()
   @Type(() => LocationDto)
   location?: LocationDto;

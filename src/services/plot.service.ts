@@ -142,20 +142,9 @@ export class PlotService {
    */
   async updatePlot(id: string, updatePlotDto: UpdatePlotDto): Promise<Plot> {
     const plot = await this.getPlotById(id);
-    const { fieldId, varietyId, ...plotFields } = updatePlotDto;
+    const { varietyId, ...plotFields } = updatePlotDto;
 
     this.plotRepository.merge(plot, plotFields);
-
-    if (fieldId) {
-      const field = await this.fieldRepository.findOneBy({ id: fieldId });
-      if (!field) {
-        throw new HttpException(
-          StatusCodes.NOT_FOUND,
-          `El campo con ID ${fieldId} no fue encontrado.`
-        );
-      }
-      plot.fieldId = fieldId;
-    }
 
     if (varietyId) {
       const variety = await this.varietyRepository.findOneBy({ id: varietyId });
