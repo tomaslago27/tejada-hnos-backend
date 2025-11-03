@@ -6,7 +6,7 @@ import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
 import { UserRole } from '@/enums';
 import { validateData } from '@middlewares/validation.middleware';
-import { CreatePurchaseOrderDto } from '@dtos/purchase-order.dto';
+import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
 
 export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
   const router = Router();
@@ -32,6 +32,13 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
     validateData(CreatePurchaseOrderDto),
     purchaseOrderController.create
+  );
+
+  router.put(
+    '/:id',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    validateData(UpdatePurchaseOrderDto),
+    purchaseOrderController.update
   );
 
   return router;

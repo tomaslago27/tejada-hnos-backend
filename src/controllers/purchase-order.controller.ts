@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { PurchaseOrderService } from '@services/purchase-order.service';
 import { HttpException } from '@/exceptions/HttpException';
 import { isValidUUID } from '@/utils/validation.utils';
-import { CreatePurchaseOrderDto } from '@dtos/purchase-order.dto';
+import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
 
 export class PurchaseOrderController {
   constructor(private readonly purchaseOrderService: PurchaseOrderService) {}
@@ -53,6 +53,30 @@ export class PurchaseOrderController {
       res.status(StatusCodes.CREATED).json({
         data: purchaseOrder,
         message: 'Orden de compra creada exitosamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra es requerido');
+      }
+
+      if (!isValidUUID(id)) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra no es un UUID válido');
+      }
+
+      const data: UpdatePurchaseOrderDto = req.body;
+      const purchaseOrder = await this.purchaseOrderService.update(id, data);
+
+      res.status(StatusCodes.OK).json({
+        data: purchaseOrder,
+        message: 'Orden de compra actualizada exitosamente',
       });
     } catch (error) {
       next(error);
