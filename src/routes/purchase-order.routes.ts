@@ -41,5 +41,11 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
     purchaseOrderController.update
   );
 
+  router.delete(
+    '/:id',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    purchaseOrderController.delete
+  );
+
   return router;
 };

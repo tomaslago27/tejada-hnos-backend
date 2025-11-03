@@ -82,4 +82,24 @@ export class PurchaseOrderController {
       next(error);
     }
   };
+
+  public delete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra es requerido');
+      }
+
+      if (!isValidUUID(id)) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra no es un UUID válido');
+      }
+
+      await this.purchaseOrderService.delete(id);
+
+      res.status(StatusCodes.NO_CONTENT).send();
+    } catch (error) {
+      next(error);
+    }
+  };
 }

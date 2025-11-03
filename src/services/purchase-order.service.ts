@@ -141,7 +141,12 @@ export class PurchaseOrderService {
   }
 
   public async delete(id: string): Promise<PurchaseOrder> {
-    // Pendiente de implementación
-    throw new Error('Pendiente de implementación');
+    const purchaseOrder = await this.purchaseOrderRepository.findOne({ where: { id } });
+
+    if (!purchaseOrder) {
+      throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
+    }
+
+    return this.purchaseOrderRepository.softRemove(purchaseOrder);
   }
 }
