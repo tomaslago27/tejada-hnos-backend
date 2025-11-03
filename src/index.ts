@@ -17,6 +17,7 @@ import { createCustomerRoutes } from "@/routes/customer.routes";
 import { createSupplierRoutes } from "@/routes/supplier.routes";
 import { createVarietyRoutes } from "./routes/variety.routes";
 import { createPurchaseOrderRoutes } from "@routes/purchase-order.routes";
+import { createInputRoutes } from "@routes/input.routes";
 
 const startServer = async () => {
   try {
@@ -40,6 +41,7 @@ const startServer = async () => {
     app.use("/suppliers", createSupplierRoutes(dataSource));
     app.use("/varieties", createVarietyRoutes(dataSource));
     app.use("/purchase-orders", createPurchaseOrderRoutes(dataSource));
+    app.use("/inputs", createInputRoutes(dataSource));
 
     // 4. Configurar Error Handler (al final)
     app.use(errorHandler);
