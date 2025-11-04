@@ -157,18 +157,9 @@ export class ActivityService {
      */
     public async update(id: string, activityData: UpdateActivityDto): Promise<Activity> {
         const activity = await this.findById(id);
-        const { workOrderId, inputsUsed, ...activityFields } = activityData;
+        const { inputsUsed, ...activityFields } = activityData;
 
         this.activityRepository.merge(activity, activityFields);
-
-        if (workOrderId !== undefined) {
-            const workOrder = await this.workOrderRepository.findOne({ where: { id: workOrderId } });
-            if (!workOrder) {
-                throw new HttpException(StatusCodes.NOT_FOUND, "La orden de trabajo no fue encontrada.");
-            }
-            activity.workOrderId = workOrderId;
-            activity.workOrder = workOrder;
-        }
 
         if (inputsUsed !== undefined) {
             if (inputsUsed.length > 0) {

@@ -78,12 +78,12 @@ export const createWorkOrderRoutes = (dataSource: DataSource): Router => {
   );
 
   /**
-   * @route   POST /work-orders/:id/restore
+   * @route   PATCH /work-orders/:id/restore
    * @desc    Restaurar una orden de trabajo eliminada
    * @access  Admin y Capataz
    * @security Valida que el usuario tenga acceso a esta OT
    */
-  router.post(
+  router.patch(
     '/:id/restore',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
     authorizeFieldAccess(dataSource),

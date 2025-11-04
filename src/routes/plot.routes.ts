@@ -57,11 +57,11 @@ export const createPlotRoutes = (dataSource: DataSource): Router => {
   router.delete('/:id', authorize(UserRole.ADMIN), plotController.deletePlot);
 
   /**
-   * @route   POST /plots/:id/restore
+   * @route   PATCH /plots/:id/restore
    * @desc    Restaurar una parcela eliminada
    * @access  Admin only
    */
-  router.post('/:id/restore', authorize(UserRole.ADMIN), plotController.restorePlot);
+  router.patch('/:id/restore', authorize(UserRole.ADMIN), plotController.restorePlot);
 
   /**
    * @route   DELETE /plots/:id/permanent

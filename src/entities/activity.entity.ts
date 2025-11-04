@@ -1,4 +1,4 @@
-import { ActivityType } from "@/enums";
+import { ActivityType, ActivityStatus } from "@/enums";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn, JoinColumn } from "typeorm";
 import { WorkOrder } from "./work-order.entity";
 import { ActivityDetails } from "@/types";
@@ -18,6 +18,13 @@ export class Activity {
 
   @Column({ type: 'enum', enum: ActivityType })
   type: ActivityType;
+
+  @Column({
+    type: 'enum',
+    enum: ActivityStatus,
+    default: ActivityStatus.PENDING,
+  })
+  status: ActivityStatus;
 
   @Column('timestamp')
   executionDate: Date;

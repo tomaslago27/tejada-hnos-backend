@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsISO8601, IsOptional, IsNumber, IsUUID, ValidateNested, IsArray } from "class-validator";
-import { ActivityType } from "@/enums";
+import { ActivityType, ActivityStatus } from "@/enums";
 import { Type } from "class-transformer";
 import { CreateInputUsageDto } from "./input-usage.dto";
 
@@ -12,6 +12,10 @@ export class CreateActivityDto {
   @IsNotEmpty({ message: 'El tipo de actividad no puede estar vacío' })
   @IsEnum(ActivityType, { message: 'El tipo de actividad no es válido' })
   type: ActivityType;
+
+  @IsOptional()
+  @IsEnum(ActivityStatus, { message: 'El estado de la actividad no es válido' })
+  status?: ActivityStatus;
 
   @IsNotEmpty({ message: 'La fecha de ejecución no puede estar vacía' })
   @IsISO8601({}, { message: 'La fecha de ejecución debe ser una fecha válida' })
@@ -33,12 +37,12 @@ export class CreateActivityDto {
 
 export class UpdateActivityDto {
   @IsOptional()
-  @IsUUID('4', { message: 'El ID de la orden de trabajo debe ser un UUID válido' })
-  workOrderId?: string;
-
-  @IsOptional()
   @IsEnum(ActivityType, { message: 'El tipo de actividad no es válido' })
   type?: ActivityType;
+
+  @IsOptional()
+  @IsEnum(ActivityStatus, { message: 'El estado de la actividad no es válido' })
+  status?: ActivityStatus;
 
   @IsOptional()
   @IsISO8601({}, { message: 'La fecha de ejecución debe ser una fecha válida' })

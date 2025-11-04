@@ -14,6 +14,12 @@ export enum ActivityType {
   OTRO = 'OTRO',
 }
 
+export enum ActivityStatus {
+  PENDING = 'PENDING', // Creada por OPERARIO, pendiente de aprobación
+  APPROVED = 'APPROVED', // Aprobada por CAPATAZ/ADMIN
+  REJECTED = 'REJECTED', // Rechazada por CAPATAZ/ADMIN
+}
+
 export enum WorkOrderStatus {
   PENDING = 'PENDING',
   IN_PROGRESS = 'IN_PROGRESS',

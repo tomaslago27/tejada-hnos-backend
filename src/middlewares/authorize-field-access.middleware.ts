@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { UserRole } from '@/enums';
 import { User } from '@/entities/user.entity';
 import { Plot } from '@/entities/plot.entity';
@@ -102,10 +102,27 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
         // Si no tiene campos gestionados, solo ve sus OTs asignadas (comportamiento de OPERARIO)
         if (managedFieldIds.length === 0) {
           req.requiredAssignedToId = userId;
+
+          // Para POST: Forzar auto-asignación en creación de WorkOrders
+          if (req.method === 'POST' && req.path.includes('/work-orders')) {
+            if (req.body && !req.body.assignedToUserId) {
+              // Auto-asignar al capataz si no especifica usuario
+              req.body.assignedToUserId = userId;
+            } else if (req.body.assignedToUserId && req.body.assignedToUserId !== userId) {
+              throw new HttpException(
+                StatusCodes.FORBIDDEN,
+                'Un capataz sin campos gestionados solo puede crear órdenes asignadas a sí mismo'
+              );
+            }
+          }
+
           return next();
         }
 
-        // Si está accediendo a una OT específica por ID (GET, PUT, DELETE, o creando actividades)
+        // ============================================================================
+        // VALIDACIÓN 1: Si está accediendo a una OT específica por ID (PUT, DELETE, o creando actividades)
+        // Validar PRIMERO el acceso a la OT existente ANTES de validar plots nuevos
+        // ============================================================================
         const workOrderId = req.params.id || req.params.workOrderId;
         if (workOrderId && req.path.includes('/work-orders/')) {
           const workOrderRepository = dataSource.getRepository(WorkOrder);
@@ -135,6 +152,33 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
               StatusCodes.FORBIDDEN,
               'No tienes permisos para acceder a esta orden de trabajo'
             );
+          }
+        }
+
+        // ============================================================================
+        // VALIDACIÓN 2: Validar plots en POST y PUT de WorkOrders (CAPATAZ con campos gestionados)
+        // Esta validación ocurre DESPUÉS de validar acceso a la OT (si aplica)
+        // ============================================================================
+        if ((req.method === 'POST' || req.method === 'PUT') && 
+            req.path.includes('/work-orders') && 
+            !req.path.includes('/activities')) {
+          
+          const plotIds = req.body?.plotIds;
+          
+          if (plotIds && Array.isArray(plotIds) && plotIds.length > 0) {
+            const plotRepository = dataSource.getRepository(Plot);
+            const plots = await plotRepository.findBy({ id: In(plotIds) });
+            
+            // Verificar que todas las plots pertenezcan a campos gestionados
+            const unauthorizedPlots = plots.filter(plot => !managedFieldIds.includes(plot.fieldId));
+            
+            if (unauthorizedPlots.length > 0) {
+              const plotNames = unauthorizedPlots.map(p => p.name || p.id).join(', ');
+              throw new HttpException(
+                StatusCodes.FORBIDDEN,
+                `No tienes permisos para asignar las siguientes parcelas: ${plotNames}. Solo puedes asignar parcelas de los campos que gestionas.`
+              );
+            }
           }
         }
 

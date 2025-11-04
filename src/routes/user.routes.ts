@@ -50,11 +50,11 @@ export const createUserRoutes = (dataSource: DataSource): Router => {
   router.delete('/:id', authorize(UserRole.ADMIN), userController.delete);
 
   /**
-   * @route   POST /users/:id/restore
+   * @route   PATCH /users/:id/restore
    * @desc    Restaurar un usuario eliminado
    * @access  Admin only
    */
-  router.post('/:id/restore', authorize(UserRole.ADMIN), userController.restore);
+  router.patch('/:id/restore', authorize(UserRole.ADMIN), userController.restore);
 
   /**
    * @route   DELETE /users/:id/permanent

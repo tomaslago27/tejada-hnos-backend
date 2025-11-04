@@ -16,7 +16,7 @@ export class Plot {
   @Column('decimal')
   area: number;
 
-  @Column('uuid')
+  @Column('uuid', { nullable: true })
   varietyId: string;
 
   @ManyToOne(() => Variety, variety => variety.plots)

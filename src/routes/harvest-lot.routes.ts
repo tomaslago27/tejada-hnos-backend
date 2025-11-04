@@ -72,11 +72,11 @@ export const createHarvestLotRoutes = (dataSource: DataSource): Router => {
   );
 
   /**
-   * @route   POST /harvest-lots/:id/restore
+   * @route   PATCH /harvest-lots/:id/restore
    * @desc    Restaurar un lote de cosecha eliminado
    * @access  ADMIN only
    */
-  router.post(
+  router.patch(
     '/:id/restore',
     authorize(UserRole.ADMIN),
     harvestLotController.restoreHarvestLot

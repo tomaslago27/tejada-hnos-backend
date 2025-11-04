@@ -41,19 +41,26 @@ export class PlotService {
       );
     }
 
-    const variety = await this.varietyRepository.findOneBy({ id: varietyId });
-    if (!variety) {
-      throw new HttpException(
-        StatusCodes.NOT_FOUND,
-        `La variedad con ID ${varietyId} no fue encontrada.`
-      );
+    if (varietyId) {
+      const variety = await this.varietyRepository.findOneBy({ id: varietyId });
+      if (!variety) {
+        throw new HttpException(
+          StatusCodes.NOT_FOUND,
+          `La variedad con ID ${varietyId} no fue encontrada.`
+        );
+      }
     }
 
-    const plot = this.plotRepository.create({
+    const plotData: Partial<Plot> = {
       ...plotFields,
-      fieldId,
-      varietyId,
-    });
+      field: { id: fieldId } as any,
+    };
+
+    if (varietyId) {
+      plotData.variety = { id: varietyId } as any;
+    }
+
+    const plot = this.plotRepository.create(plotData);
 
     return await this.plotRepository.save(plot);
   }
@@ -142,20 +149,9 @@ export class PlotService {
    */
   async updatePlot(id: string, updatePlotDto: UpdatePlotDto): Promise<Plot> {
     const plot = await this.getPlotById(id);
-    const { fieldId, varietyId, ...plotFields } = updatePlotDto;
+    const { varietyId, ...plotFields } = updatePlotDto;
 
     this.plotRepository.merge(plot, plotFields);
-
-    if (fieldId) {
-      const field = await this.fieldRepository.findOneBy({ id: fieldId });
-      if (!field) {
-        throw new HttpException(
-          StatusCodes.NOT_FOUND,
-          `El campo con ID ${fieldId} no fue encontrado.`
-        );
-      }
-      plot.fieldId = fieldId;
-    }
 
     if (varietyId) {
       const variety = await this.varietyRepository.findOneBy({ id: varietyId });
@@ -165,7 +161,7 @@ export class PlotService {
           `La variedad con ID ${varietyId} no fue encontrada.`
         );
       }
-      plot.varietyId = varietyId;
+      plot.variety = variety;
     }
 
     return await this.plotRepository.save(plot);
