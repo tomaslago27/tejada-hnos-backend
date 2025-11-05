@@ -1,0 +1,40 @@
+---
+id: 259ddf96-4ff2-478d-9ff4-1c202607f8ec
+---
+flowchart TD
+    A[Inicio: Admin necesita insumos] --> B(Crear PurchaseOrder);
+    B --> C{PurchaseOrder Creada};
+    C -- "Estado: PENDIENTE" --> D[Admin negocia/confirma precio con Proveedor];
+    D --> E[Admin edita la PO y asigna el 'unitPrice' final en PurchaseOrderDetail];
+    E --> F(Cambiar estado de PurchaseOrder a 'APROBADA');
+
+    F -- "Lista para recibir" --> G[Proveedor envía mercadería #40;puede ser parcial#41;];
+    G --> H(Admin crea un GoodsReceipt #40;Recepción#41; para el remito);
+    H --> I[Admin crea uno o más GoodsReceiptDetail];
+    I -- "Por cada detalle (ej: 400kg de Urea)" --> J(Vincular GoodsReceiptDetail con la línea PurchaseOrderDetail correspondiente);
+    
+    J --> K1
+    subgraph TransaccionDelSistema["Transacción del Sistema (Backend)"]
+        direction TB
+        K1[Obtener 'unitPrice' desde PurchaseOrderDetail];
+        K2[Obtener 'quantityReceived' desde GoodsReceiptDetail];
+        K3[Cargar Input #40;Insumo#41; correspondiente];
+        K4[Calcular Nuevo Costo Promedio Ponderado #40;CPP#41;];
+        K5[Actualizar Input.stock #40;suma quantityReceived#41;];
+        K6[Actualizar Input.costPerUnit #40;con el nuevo CPP#41;];
+        K7[Actualizar PurchaseOrderDetail.quantityReceived #40;suma quantityReceived#41;];
+        K1 & K2 --> K3;
+        K3 & K2 & K1 --> K4;
+        K4 --> K6;
+        K2 --> K5;
+        K2 --> K7;
+    end
+
+    K1 --> L{¿Línea de Pedido #40;PODetail#41; completada?};
+    L -- No --> M[Orden sigue APROBADA o RECIBIDA_PARCIAL];
+    M --> G; 
+    %%Loop por si hay más entregas
+    L -- Sí --> N{¿Todas las líneas de la PO completadas?};
+    N -- No --> M;
+    N -- Sí --> O(Cambiar estado de PurchaseOrder a 'RECIBIDA' o 'CERRADA');
+    O --> P([Fin del Flujo de Compra]);
