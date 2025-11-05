@@ -23,6 +23,11 @@ export class PurchaseOrderService {
     this.goodsReceiptRepository = this.dataSource.getRepository(GoodsReceipt);
   }
 
+  /**
+   * Crear una nueva orden de compra
+   * @param data Datos de la orden de compra a crear
+   * @returns Promise<PurchaseOrder> La orden de compra creada
+   */
   public async create(data: CreatePurchaseOrderDto): Promise<PurchaseOrder> {
     const supplier = await this.supplierRepository.findOne({ where: { id: data.supplierId } });
 
@@ -61,16 +66,35 @@ export class PurchaseOrderService {
     return this.findById(savedPurchaseOrder.id);
   }
 
+  /**
+   * Obtener todas las órdenes de compra
+   * @returns Promise<PurchaseOrder[]> Lista de órdenes de compra
+   */
   public async findAll(): Promise<PurchaseOrder[]> {
     return this.purchaseOrderRepository.find({
-      relations: ['supplier', 'details'],
+      relations: [
+        'supplier',
+        'details',
+        'details.input',
+        'details.receiptDetails',
+        'details.receiptDetails.goodsReceipt',
+      ],
     });
   }
 
   public async findById(id: string): Promise<PurchaseOrder> {
     const purchaseOrder = await this.purchaseOrderRepository.findOne({
       where: { id },
-      relations: ['supplier', 'details'],
+      relations: [
+        'supplier',
+        'details',
+        'details.input',
+        'details.receiptDetails',
+        'details.receiptDetails.goodsReceipt',
+        'receipts',
+        'receipts.receivedBy',
+        'receipts.details',
+      ],
     });
 
     if (!purchaseOrder) {
@@ -80,6 +104,12 @@ export class PurchaseOrderService {
     return purchaseOrder;
   }
 
+  /**
+   * Actualizar una orden de compra por su ID
+   * @param id ID de la orden de compra a actualizar
+   * @param data Datos de la orden de compra a actualizar
+   * @returns Promise<PurchaseOrder> La orden de compra actualizada
+   */
   public async update(id: string, data: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
     const purchaseOrder = await this.purchaseOrderRepository.findOne({
       where: { id },
@@ -140,6 +170,11 @@ export class PurchaseOrderService {
     return this.findById(purchaseOrder.id);
   }
 
+  /**
+   * Eliminar una orden de compra por su ID (soft delete)
+   * @param id ID de la orden de compra a eliminar
+   * @returns Promise<PurchaseOrder> La orden de compra eliminada
+   */
   public async delete(id: string): Promise<PurchaseOrder> {
     const purchaseOrder = await this.purchaseOrderRepository.findOne({ where: { id } });
 
@@ -147,6 +182,42 @@ export class PurchaseOrderService {
       throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
     }
 
-    return this.purchaseOrderRepository.softRemove(purchaseOrder);
+    return await this.purchaseOrderRepository.softRemove(purchaseOrder);
+  }
+
+  /**
+   * Restaurar una orden de compra por su ID
+   * @param id ID de la orden de compra a restaurar
+   * @returns Promise<PurchaseOrder> La orden de compra restaurada
+   */
+  public async restore(id: string): Promise<PurchaseOrder> {
+    const purchaseOrder = await this.purchaseOrderRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+
+    if (!purchaseOrder) {
+      throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
+    }
+
+    return await this.purchaseOrderRepository.recover(purchaseOrder);
+  }
+
+  /**
+   * Eliminar una orden de compra por su ID (hard delete)
+   * @param id ID de la orden de compra a eliminar
+   * @returns Promise<PurchaseOrder> La orden de compra eliminada permanentemente
+   */
+  public async hardDelete(id: string): Promise<PurchaseOrder> {
+    const purchaseOrder = await this.purchaseOrderRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+
+    if (!purchaseOrder) {
+      throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
+    }
+
+    return await this.purchaseOrderRepository.remove(purchaseOrder);
   }
 }
