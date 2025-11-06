@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { PurchaseOrderService } from '@services/purchase-order.service';
 import { HttpException } from '@/exceptions/HttpException';
 import { isValidUUID } from '@/utils/validation.utils';
-import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
+import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from '@dtos/purchase-order.dto';
 import { DataSource } from 'typeorm';
 
 export class PurchaseOrderController {
@@ -118,6 +118,7 @@ export class PurchaseOrderController {
   /**
    * PUT /purchase-orders/:id
    * Actualizar una orden de compra por su ID
+   * Solo permite editar órdenes en estado PENDIENTE
    */
   public update = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -137,6 +138,39 @@ export class PurchaseOrderController {
       res.status(StatusCodes.OK).json({
         data: purchaseOrder,
         message: 'Orden de compra actualizada exitosamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PATCH /purchase-orders/:id/status
+   * Actualizar el estado de una orden de compra
+   * Permite cambiar el estado y opcionalmente actualizar precios unitarios
+   */
+  public updateStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra es requerido');
+      }
+
+      if (!isValidUUID(id)) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra no es un UUID válido');
+      }
+
+      const data: UpdatePurchaseOrderStatusDto = req.body;
+      const purchaseOrder = await this.purchaseOrderService.updateStatus(
+        id, 
+        data.status, 
+        data.details
+      );
+
+      res.status(StatusCodes.OK).json({
+        data: purchaseOrder,
+        message: `Estado de la orden de compra actualizado a ${data.status}`,
       });
     } catch (error) {
       next(error);

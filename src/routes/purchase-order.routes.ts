@@ -5,7 +5,7 @@ import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
 import { UserRole } from '@/enums';
 import { validateData } from '@middlewares/validation.middleware';
-import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
+import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from '@dtos/purchase-order.dto';
 
 export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
   const router = Router();
@@ -49,7 +49,7 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
 
   /**
    * @route   PUT /purchase-orders/:id
-   * @desc    Actualizar una orden de compra por su ID
+   * @desc    Actualizar una orden de compra por su ID (solo si está en estado PENDIENTE)
    * @access  ADMIN, CAPATAZ
    */
   router.put(
@@ -57,6 +57,18 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
     validateData(UpdatePurchaseOrderDto),
     purchaseOrderController.update
+  );
+
+  /**
+   * @route   PATCH /purchase-orders/:id/status
+   * @desc    Actualizar el estado de una orden de compra (aprobar, cancelar, etc.)
+   * @access  ADMIN, CAPATAZ
+   */
+  router.patch(
+    '/:id/status',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    validateData(UpdatePurchaseOrderStatusDto),
+    purchaseOrderController.updateStatus
   );
 
   /**

@@ -3,24 +3,16 @@ import { PurchaseOrder } from '@entities/purchase-order.entity';
 import { PurchaseOrderDetail } from '@entities/purchase-order-detail.entity';
 import { Supplier } from '@entities/supplier.entity';
 import { Input } from '@entities/input.entity';
-import { GoodsReceipt } from '@entities/goods-receipt.entity';
-import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
+import { CreatePurchaseOrderDto, PurchaseOrderDetailPriceDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { StatusCodes } from 'http-status-codes';
+import { PurchaseOrderStatus } from '@/enums';
 
 export class PurchaseOrderService {
-  private readonly purchaseOrderRepository: Repository<PurchaseOrder>;
-  private readonly purchaseOrderDetailRepository: Repository<PurchaseOrderDetail>;
-  private readonly supplierRepository: Repository<Supplier>;
-  private readonly inputRepository: Repository<Input>;
-  private readonly goodsReceiptRepository: Repository<GoodsReceipt>;
+  private purchaseOrderRepository: Repository<PurchaseOrder>;
 
-  constructor(private readonly dataSource: DataSource) {
+  constructor(private dataSource: DataSource) {
     this.purchaseOrderRepository = this.dataSource.getRepository(PurchaseOrder);
-    this.purchaseOrderDetailRepository = this.dataSource.getRepository(PurchaseOrderDetail);
-    this.supplierRepository = this.dataSource.getRepository(Supplier);
-    this.inputRepository = this.dataSource.getRepository(Input);
-    this.goodsReceiptRepository = this.dataSource.getRepository(GoodsReceipt);
   }
 
   /**
@@ -29,41 +21,85 @@ export class PurchaseOrderService {
    * @returns Promise<PurchaseOrder> La orden de compra creada
    */
   public async create(data: CreatePurchaseOrderDto): Promise<PurchaseOrder> {
-    const supplier = await this.supplierRepository.findOne({ where: { id: data.supplierId } });
+    return await this.dataSource.transaction(async (manager) => {
+      // Validar proveedor
+      const supplier = await manager.findOne(Supplier, { where: { id: data.supplierId } });
 
-    if (!supplier) {
-      throw new HttpException(StatusCodes.NOT_FOUND, 'Proveedor no encontrado');
-    }
+      if (!supplier) {
+        throw new HttpException(StatusCodes.NOT_FOUND, 'Proveedor no encontrado');
+      }
 
-    const detailInputIds = data.details?.map(detail => detail.inputId) ?? [];
-    const uniqueInputIds = [...new Set(detailInputIds)];
+      // Validar insumos y obtener sus datos
+      const detailInputIds = data.details?.map(detail => detail.inputId) ?? [];
+      const uniqueInputIds = [...new Set(detailInputIds)];
 
-    if (uniqueInputIds.length > 0) {
-      const inputs = await this.inputRepository.findBy({ id: In(uniqueInputIds) });
+      if (uniqueInputIds.length === 0) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'Debe agregar al menos un insumo a la orden de compra');
+      }
+
+      const inputs = await manager.findBy(Input, { id: In(uniqueInputIds) });
 
       if (inputs.length !== uniqueInputIds.length) {
         throw new HttpException(StatusCodes.NOT_FOUND, 'Uno o más insumos no fueron encontrados');
       }
-    }
 
-    const totalAmount = (data.details ?? []).reduce((acc, detail) => {
-      const quantity = Number(detail.quantity);
-      const unitPrice = Number(detail.unitPrice);
-      return acc + quantity * unitPrice;
-    }, 0);
+      // Crear un mapa de inputs para acceso rápido
+      const inputMap = new Map(inputs.map(input => [input.id, input]));
 
-    const purchaseOrder = this.purchaseOrderRepository.create({
-      ...data,
-      totalAmount,
-      supplier,
-      details: (data.details ?? []).map(detail =>
-        this.purchaseOrderDetailRepository.create(detail)
-      ),
+      // Calcular totalAmount y preparar detalles con precios por defecto
+      let totalAmount = 0;
+      const details: PurchaseOrderDetail[] = [];
+
+      for (const detail of data.details ?? []) {
+        const input = inputMap.get(detail.inputId);
+        if (!input) continue;
+
+        // Si no se especifica unitPrice, tomar costPerUnit del insumo o 0
+        const unitPrice = detail.unitPrice !== undefined && detail.unitPrice !== null
+          ? Number(detail.unitPrice)
+          : Number(input.costPerUnit) || 0;
+
+        const quantity = Number(detail.quantity);
+        totalAmount += quantity * unitPrice;
+
+        const orderDetail = manager.create(PurchaseOrderDetail, {
+          inputId: detail.inputId,
+          quantity,
+          unitPrice,
+        });
+
+        details.push(orderDetail);
+      }
+
+      // Crear la orden de compra con status PENDIENTE por defecto
+      const purchaseOrder = manager.create(PurchaseOrder, {
+        supplierId: data.supplierId,
+        status: PurchaseOrderStatus.PENDIENTE,
+        totalAmount,
+        details,
+      });
+
+      // Guardar (cascade guardará los detalles automáticamente)
+      const savedPurchaseOrder = await manager.save(PurchaseOrder, purchaseOrder);
+
+      // Retornar con todas las relaciones cargadas
+      const result = await manager.findOne(PurchaseOrder, {
+        where: { id: savedPurchaseOrder.id },
+        relations: [
+          'supplier',
+          'details',
+          'details.input',
+          'details.receiptDetails',
+          'details.receiptDetails.goodsReceipt',
+        ],
+      });
+
+      if (!result) {
+        throw new HttpException(StatusCodes.INTERNAL_SERVER_ERROR, 'Error al crear la orden de compra');
+      }
+
+      return result;
     });
-
-    const savedPurchaseOrder = await this.purchaseOrderRepository.save(purchaseOrder);
-
-    return this.findById(savedPurchaseOrder.id);
   }
 
   /**
@@ -106,68 +142,208 @@ export class PurchaseOrderService {
 
   /**
    * Actualizar una orden de compra por su ID
+   * NOTA: Este método solo permite actualizar órdenes en estado PENDIENTE
+   * No modifica el status (usar updateStatus para eso)
    * @param id ID de la orden de compra a actualizar
    * @param data Datos de la orden de compra a actualizar
    * @returns Promise<PurchaseOrder> La orden de compra actualizada
    */
   public async update(id: string, data: UpdatePurchaseOrderDto): Promise<PurchaseOrder> {
-    const purchaseOrder = await this.purchaseOrderRepository.findOne({
-      where: { id },
-      relations: ['details', 'supplier'],
+    return await this.dataSource.transaction(async (manager) => {
+      // Buscar la orden con sus detalles
+      const purchaseOrder = await manager.findOne(PurchaseOrder, {
+        where: { id },
+        relations: ['details', 'supplier'],
+      });
+
+      if (!purchaseOrder) {
+        throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
+      }
+
+      // Validar que la orden esté en estado PENDIENTE
+      if (purchaseOrder.status !== PurchaseOrderStatus.PENDIENTE) {
+        throw new HttpException(
+          StatusCodes.BAD_REQUEST,
+          `No se puede modificar una orden de compra en estado ${purchaseOrder.status}. Solo se pueden editar órdenes en estado PENDIENTE.`
+        );
+      }
+
+      // Actualizar proveedor si es necesario
+      if (data.supplierId && data.supplierId !== purchaseOrder.supplierId) {
+        const supplier = await manager.findOne(Supplier, { where: { id: data.supplierId } });
+
+        if (!supplier) {
+          throw new HttpException(StatusCodes.NOT_FOUND, 'Proveedor no encontrado');
+        }
+
+        purchaseOrder.supplierId = supplier.id;
+        purchaseOrder.supplier = supplier;
+      }
+
+      // Actualizar detalles si se proporcionan
+      if (data.details && data.details.length > 0) {
+        // Validar que todos los insumos existen
+        const detailInputIds = data.details.map(detail => detail.inputId);
+        const uniqueInputIds = [...new Set(detailInputIds)];
+
+        const inputs = await manager.findBy(Input, { id: In(uniqueInputIds) });
+
+        if (inputs.length !== uniqueInputIds.length) {
+          throw new HttpException(StatusCodes.NOT_FOUND, 'Uno o más insumos no fueron encontrados');
+        }
+
+        // Crear mapas para comparación
+        const existingDetailsMap = new Map(
+          purchaseOrder.details.map(detail => [detail.inputId, detail])
+        );
+        const newDetailsMap = new Map(
+          data.details.map(detail => [detail.inputId, detail])
+        );
+
+        // 1. Actualizar o mantener detalles existentes
+        for (const existingDetail of purchaseOrder.details) {
+          const newDetailData = newDetailsMap.get(existingDetail.inputId);
+
+          if (newDetailData) {
+            // Actualizar cantidad y/o precio si cambiaron
+            if (newDetailData.quantity !== undefined) {
+              existingDetail.quantity = Number(newDetailData.quantity);
+            }
+            if (newDetailData.unitPrice !== undefined) {
+              existingDetail.unitPrice = Number(newDetailData.unitPrice);
+            }
+            await manager.save(PurchaseOrderDetail, existingDetail);
+          } else {
+            // 2. Eliminar detalles que ya no están en la lista
+            await manager.remove(PurchaseOrderDetail, existingDetail);
+          }
+        }
+
+        // 3. Agregar nuevos detalles que no existían
+        for (const newDetailData of data.details) {
+          if (!existingDetailsMap.has(newDetailData.inputId)) {
+            const input = inputs.find(i => i.id === newDetailData.inputId);
+            const unitPrice = newDetailData.unitPrice !== undefined && newDetailData.unitPrice !== null
+              ? Number(newDetailData.unitPrice)
+              : Number(input?.costPerUnit) || 0;
+
+            const newDetail = manager.create(PurchaseOrderDetail, {
+              purchaseOrderId: purchaseOrder.id,
+              inputId: newDetailData.inputId,
+              quantity: Number(newDetailData.quantity),
+              unitPrice,
+            });
+
+            await manager.save(PurchaseOrderDetail, newDetail);
+          }
+        }
+
+        // Recalcular totalAmount basado en los detalles actualizados
+        const updatedDetails = await manager.find(PurchaseOrderDetail, {
+          where: { purchaseOrderId: purchaseOrder.id },
+        });
+
+        purchaseOrder.totalAmount = updatedDetails.reduce((acc, detail) => {
+          return acc + Number(detail.quantity) * Number(detail.unitPrice);
+        }, 0);
+      }
+
+      // Guardar cambios en la orden
+      await manager.save(PurchaseOrder, purchaseOrder);
+
+      // Retornar con todas las relaciones cargadas
+      const result = await manager.findOne(PurchaseOrder, {
+        where: { id: purchaseOrder.id },
+        relations: [
+          'supplier',
+          'details',
+          'details.input',
+          'details.receiptDetails',
+          'details.receiptDetails.goodsReceipt',
+          'receipts',
+          'receipts.receivedBy',
+          'receipts.details',
+        ],
+      });
+
+      if (!result) {
+        throw new HttpException(StatusCodes.INTERNAL_SERVER_ERROR, 'Error al actualizar la orden de compra');
+      }
+
+      return result;
     });
+  }
 
-    if (!purchaseOrder) {
-      throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
-    }
+  /**
+   * Actualizar el estado de una orden de compra
+   * Este método permite cambiar el estado y opcionalmente actualizar precios unitarios
+   * (útil para aprobar una orden y establecer los precios finales negociados)
+   * @param id ID de la orden de compra
+   * @param status Nuevo estado
+   * @param details Opcional: array con inputId y unitPrice para actualizar precios
+   * @returns Promise<PurchaseOrder> La orden de compra actualizada
+   */
+  public async updateStatus(
+    id: string,
+    status: PurchaseOrderStatus,
+    details?: Array<PurchaseOrderDetailPriceDto>
+  ): Promise<PurchaseOrder> {
+    return await this.dataSource.transaction(async (manager) => {
+      const purchaseOrder = await manager.findOne(PurchaseOrder, {
+        where: { id },
+        relations: ['details', 'supplier'],
+      });
 
-    if (data.supplierId && data.supplierId !== purchaseOrder.supplierId) {
-      const supplier = await this.supplierRepository.findOne({ where: { id: data.supplierId } });
-
-      if (!supplier) {
-        throw new HttpException(StatusCodes.NOT_FOUND, 'Proveedor no encontrado');
+      if (!purchaseOrder) {
+        throw new HttpException(StatusCodes.NOT_FOUND, 'Orden de compra no encontrada');
       }
 
-      purchaseOrder.supplierId = supplier.id;
-      purchaseOrder.supplier = supplier;
-    }
+      // Actualizar status
+      purchaseOrder.status = status;
 
-    if (data.status !== undefined) {
-      purchaseOrder.status = data.status;
-    }
+      // Si se proporcionan precios para actualizar (típicamente al aprobar)
+      if (details && details.length > 0) {
+        const pricesMap = new Map(
+          details.map(item => [item.inputId, item.unitPrice])
+        );
 
-    if (data.totalAmount !== undefined && (!data.details || data.details.length === 0)) {
-      purchaseOrder.totalAmount = Number(data.totalAmount);
-    }
+        for (const detail of purchaseOrder.details) {
+          const newPrice = pricesMap.get(detail.inputId);
+          if (newPrice !== undefined) {
+            detail.unitPrice = Number(newPrice);
+            await manager.save(PurchaseOrderDetail, detail);
+          }
+        }
 
-    if (data.details && data.details.length > 0) {
-      const detailInputIds = data.details.map(detail => detail.inputId);
-      const uniqueInputIds = [...new Set(detailInputIds)];
-
-      const inputs = await this.inputRepository.findBy({ id: In(uniqueInputIds) });
-
-      if (inputs.length !== uniqueInputIds.length) {
-        throw new HttpException(StatusCodes.NOT_FOUND, 'Uno o más insumos no fueron encontrados');
+        // Recalcular totalAmount
+        purchaseOrder.totalAmount = purchaseOrder.details.reduce((acc, detail) => {
+          return acc + Number(detail.quantity) * Number(detail.unitPrice);
+        }, 0);
       }
 
-      await this.purchaseOrderDetailRepository.delete({ purchaseOrderId: purchaseOrder.id });
+      await manager.save(PurchaseOrder, purchaseOrder);
 
-      purchaseOrder.details = data.details.map(detail =>
-        this.purchaseOrderDetailRepository.create({
-          ...detail,
-          purchaseOrderId: purchaseOrder.id,
-        })
-      );
+      // Retornar con todas las relaciones cargadas
+      const result = await manager.findOne(PurchaseOrder, {
+        where: { id: purchaseOrder.id },
+        relations: [
+          'supplier',
+          'details',
+          'details.input',
+          'details.receiptDetails',
+          'details.receiptDetails.goodsReceipt',
+          'receipts',
+          'receipts.receivedBy',
+          'receipts.details',
+        ],
+      });
 
-      purchaseOrder.totalAmount = data.details.reduce((acc, detail) => {
-        const quantity = Number(detail.quantity);
-        const unitPrice = Number(detail.unitPrice);
-        return acc + quantity * unitPrice;
-      }, 0);
-    }
+      if (!result) {
+        throw new HttpException(StatusCodes.INTERNAL_SERVER_ERROR, 'Error al actualizar el estado de la orden de compra');
+      }
 
-    await this.purchaseOrderRepository.save(purchaseOrder);
-
-    return this.findById(purchaseOrder.id);
+      return result;
+    });
   }
 
   /**
