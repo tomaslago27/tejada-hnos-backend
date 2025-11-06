@@ -95,11 +95,27 @@ export class CustomerService {
   async findById(id: string): Promise<Customer> {
     const customer = await this.customerRepository.findOne({
       where: { id, deletedAt: IsNull() },
+      relations: ['salesOrders', 'salesOrders.details'],
     });
 
     if (!customer) {
       throw new HttpException(StatusCodes.NOT_FOUND, 'Cliente no encontrado');
     }
+
+    // Calcular totalSpent
+    let totalSpent = 0;
+    if (customer.salesOrders) {
+      for (const order of customer.salesOrders) {
+        if (order.details) {
+          for (const detail of order.details) {
+            totalSpent += Number(detail.unitPrice) * Number(detail.quantityKg);
+          }
+        }
+      }
+    }
+    
+    (customer as any).totalSpent = totalSpent;
+    (customer as any).totalOrders = customer.salesOrders?.length || 0;
 
     return customer;
   }
@@ -122,8 +138,26 @@ export class CustomerService {
       }
     }
 
+    // Validar que no exista un cliente con el mismo nombre
+    const existingByName = await this.customerRepository.findOne({
+      where: { name: data.name },
+    });
+
+    if (existingByName) {
+      throw new HttpException(
+        StatusCodes.CONFLICT,
+        'Ya existe un cliente con ese nombre'
+      );
+    }
+
     const customer = this.customerRepository.create(data);
-    return await this.customerRepository.save(customer);
+    const savedCustomer = await this.customerRepository.save(customer);
+    
+    // Agregar totalSpent como 0 para clientes nuevos
+    (savedCustomer as any).totalSpent = 0;
+    (savedCustomer as any).totalOrders = 0;
+    
+    return savedCustomer;
   }
 
   /**
@@ -146,8 +180,44 @@ export class CustomerService {
       }
     }
 
+    // Validar que no exista otro cliente con el mismo nombre
+    if (data.name && data.name !== customer.name) {
+      const existingByName = await this.customerRepository.findOne({
+        where: { name: data.name },
+      });
+
+      if (existingByName && existingByName.id !== id) {
+        throw new HttpException(
+          StatusCodes.CONFLICT,
+          'Ya existe otro cliente con ese nombre'
+        );
+      }
+    }
+
     this.customerRepository.merge(customer, data);
-    return await this.customerRepository.save(customer);
+    const updatedCustomer = await this.customerRepository.save(customer);
+    
+    // Recalcular totalSpent después de actualizar
+    const customerWithOrders = await this.customerRepository.findOne({
+      where: { id },
+      relations: ['salesOrders', 'salesOrders.details'],
+    });
+    
+    let totalSpent = 0;
+    if (customerWithOrders?.salesOrders) {
+      for (const order of customerWithOrders.salesOrders) {
+        if (order.details) {
+          for (const detail of order.details) {
+            totalSpent += Number(detail.unitPrice) * Number(detail.quantityKg);
+          }
+        }
+      }
+    }
+    
+    (updatedCustomer as any).totalSpent = totalSpent;
+    (updatedCustomer as any).totalOrders = customerWithOrders?.salesOrders?.length || 0;
+    
+    return updatedCustomer;
   }
 
   /**

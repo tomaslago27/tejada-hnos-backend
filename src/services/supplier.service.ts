@@ -95,11 +95,27 @@ export class SupplierService {
   async findById(id: string): Promise<Supplier> {
     const supplier = await this.supplierRepository.findOne({
       where: { id, deletedAt: IsNull() },
+      relations: ['purchaseOrders', 'purchaseOrders.details'],
     });
 
     if (!supplier) {
       throw new HttpException(StatusCodes.NOT_FOUND, 'Proveedor no encontrado');
     }
+
+    // Calcular totalSupplied
+    let totalSpent = 0;
+    if (supplier.purchaseOrders) {
+      for (const order of supplier.purchaseOrders) {
+        if (order.details) {
+          for (const detail of order.details) {
+            totalSpent += Number(detail.unitPrice) * Number(detail.quantity);
+          }
+        }
+      }
+    }
+    
+    (supplier as any).totalSupplied = totalSpent;
+    (supplier as any).totalOrders = supplier.purchaseOrders?.length || 0;
 
     return supplier;
   }
@@ -122,8 +138,26 @@ export class SupplierService {
       }
     }
 
+    // Validar que no exista un proveedor con el mismo nombre
+    const existingByName = await this.supplierRepository.findOne({
+      where: { name: data.name },
+    });
+
+    if (existingByName) {
+      throw new HttpException(
+        StatusCodes.CONFLICT,
+        'Ya existe un proveedor con ese nombre'
+      );
+    }
+
     const supplier = this.supplierRepository.create(data);
-    return await this.supplierRepository.save(supplier);
+    const savedSupplier = await this.supplierRepository.save(supplier);
+    
+    // Agregar totalSupplied como 0 para proveedores nuevos
+    (savedSupplier as any).totalSupplied = 0;
+    (savedSupplier as any).totalOrders = 0;
+    
+    return savedSupplier;
   }
 
   /**
@@ -146,8 +180,44 @@ export class SupplierService {
       }
     }
 
+    // Validar que no exista otro proveedor con el mismo nombre
+    if (data.name && data.name !== supplier.name) {
+      const existingByName = await this.supplierRepository.findOne({
+        where: { name: data.name },
+      });
+
+      if (existingByName && existingByName.id !== id) {
+        throw new HttpException(
+          StatusCodes.CONFLICT,
+          'Ya existe otro proveedor con ese nombre'
+        );
+      }
+    }
+
     this.supplierRepository.merge(supplier, data);
-    return await this.supplierRepository.save(supplier);
+    const updatedSupplier = await this.supplierRepository.save(supplier);
+    
+    // Recalcular totalSupplied después de actualizar
+    const supplierWithOrders = await this.supplierRepository.findOne({
+      where: { id },
+      relations: ['purchaseOrders', 'purchaseOrders.details'],
+    });
+    
+    let totalSpent = 0;
+    if (supplierWithOrders?.purchaseOrders) {
+      for (const order of supplierWithOrders.purchaseOrders) {
+        if (order.details) {
+          for (const detail of order.details) {
+            totalSpent += Number(detail.unitPrice) * Number(detail.quantity);
+          }
+        }
+      }
+    }
+    
+    (updatedSupplier as any).totalSupplied = totalSpent;
+    (updatedSupplier as any).totalOrders = supplierWithOrders?.purchaseOrders?.length || 0;
+    
+    return updatedSupplier;
   }
 
   /**
