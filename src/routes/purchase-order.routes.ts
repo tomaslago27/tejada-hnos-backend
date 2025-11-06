@@ -62,11 +62,11 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
   /**
    * @route   PATCH /purchase-orders/:id/status
    * @desc    Actualizar el estado de una orden de compra (aprobar, cancelar, etc.)
-   * @access  ADMIN, CAPATAZ
+   * @access  ADMIN only
    */
   router.patch(
     '/:id/status',
-    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    authorize(UserRole.ADMIN),
     validateData(UpdatePurchaseOrderStatusDto),
     purchaseOrderController.updateStatus
   );
