@@ -1,5 +1,6 @@
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from "class-validator";
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
+import { PurchaseOrderStatus } from "@/enums";
 
 export class PurchaseOrderDetailDto {
   @IsUUID('4', { message: 'El ID del insumo debe ser un UUID válido' })
@@ -11,25 +12,40 @@ export class PurchaseOrderDetailDto {
   @IsNotEmpty({ message: 'La cantidad no puede estar vacía' })
   quantity: number;
 
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'El precio unitario debe ser un número válido' })
   @Min(0, { message: 'El precio unitario no puede ser negativo' })
-  @IsNotEmpty({ message: 'El precio unitario no puede estar vacío' })
-  unitPrice: number;
+  unitPrice?: number;
+}
+
+/**
+ * DTO para actualizar un detalle existente usando su ID
+ * Se usa en el método update cuando ya existe un detalle
+ */
+export class UpdatePurchaseOrderDetailDto {
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID del detalle debe ser un UUID válido' })
+  id?: string; // Si se proporciona, se actualiza un detalle existente
+
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID del insumo debe ser un UUID válido' })
+  inputId?: string; // Si no se proporciona id, se usa inputId para crear nuevo
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'La cantidad debe ser un número válido' })
+  @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
+  quantity?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'El precio unitario debe ser un número válido' })
+  @Min(0, { message: 'El precio unitario no puede ser negativo' })
+  unitPrice?: number;
 }
 
 export class CreatePurchaseOrderDto {
   @IsUUID('4', { message: 'El ID del proveedor debe ser un UUID válido' })
   @IsNotEmpty({ message: 'El ID del proveedor no puede estar vacío' })
   supplierId: string;
-
-  @IsString({ message: 'El estado debe ser texto' })
-  @IsNotEmpty({ message: 'El estado no puede estar vacío' })
-  status: string;
-
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'El monto total debe ser un número válido' })
-  @Min(0, { message: 'El monto total no puede ser negativo' })
-  @IsNotEmpty({ message: 'El monto total no puede estar vacío' })
-  totalAmount: number;
 
   @IsArray({ message: 'Los detalles deben ser un array' })
   @ValidateNested({ each: true })
@@ -43,17 +59,31 @@ export class UpdatePurchaseOrderDto {
   supplierId?: string;
 
   @IsOptional()
-  @IsString({ message: 'El estado debe ser texto' })
-  status?: string;
-
-  @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'El monto total debe ser un número válido' })
-  @Min(0, { message: 'El monto total no puede ser negativo' })
-  totalAmount?: number;
-
-  @IsOptional()
   @IsArray({ message: 'Los detalles deben ser un array' })
   @ValidateNested({ each: true })
-  @Type(() => PurchaseOrderDetailDto)
-  details?: PurchaseOrderDetailDto[];
+  @Type(() => UpdatePurchaseOrderDetailDto)
+  details?: UpdatePurchaseOrderDetailDto[];
+}
+
+export class PurchaseOrderDetailPriceDto {
+  @IsUUID('4', { message: 'El ID del detalle debe ser un UUID válido' })
+  @IsNotEmpty({ message: 'El ID del detalle no puede estar vacío' })
+  detailId: string; // Cambio: usar el ID del PurchaseOrderDetail directamente
+
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'El precio unitario debe ser un número válido' })
+  @Min(0, { message: 'El precio unitario no puede ser negativo' })
+  @IsNotEmpty({ message: 'El precio unitario no puede estar vacío' })
+  unitPrice: number;
+}
+
+export class UpdatePurchaseOrderStatusDto {
+  @IsEnum(PurchaseOrderStatus, { message: 'El estado debe ser un valor válido del enum PurchaseOrderStatus' })
+  @IsNotEmpty({ message: 'El estado no puede estar vacío' })
+  status: PurchaseOrderStatus;
+
+  @IsOptional()
+  @IsArray({ message: 'Los precios deben ser un array' })
+  @ValidateNested({ each: true })
+  @Type(() => PurchaseOrderDetailPriceDto)
+  details?: PurchaseOrderDetailPriceDto[];
 }

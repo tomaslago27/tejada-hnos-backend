@@ -1,32 +1,45 @@
 import { Router } from 'express';
 import { DataSource } from 'typeorm';
 import { PurchaseOrderController } from '@controllers/purchase-order.controller';
-import { PurchaseOrderService } from '@services/purchase-order.service';
 import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
 import { UserRole } from '@/enums';
 import { validateData } from '@middlewares/validation.middleware';
-import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto } from '@dtos/purchase-order.dto';
+import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from '@dtos/purchase-order.dto';
 
 export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
   const router = Router();
-  const purchaseOrderService = new PurchaseOrderService(dataSource);
-  const purchaseOrderController = new PurchaseOrderController(purchaseOrderService);
+  const purchaseOrderController = new PurchaseOrderController(dataSource);
 
   router.use(authenticate);
 
+  /**
+   * @route   GET /purchase-orders
+   * @desc    Obtener todas las órdenes de compra
+   * @access  ADMIN, CAPATAZ
+   */
   router.get(
     '/',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
     purchaseOrderController.getAll
   );
 
+  /**
+   * @route   GET /purchase-orders/:id
+   * @desc    Obtener una orden de compra por su ID
+   * @access  ADMIN, CAPATAZ
+   */
   router.get(
     '/:id',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
     purchaseOrderController.getById
   );
 
+  /**
+   * @route   POST /purchase-orders
+   * @desc    Crear una nueva orden de compra
+   * @access  ADMIN, CAPATAZ
+   */
   router.post(
     '/',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
@@ -34,6 +47,11 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
     purchaseOrderController.create
   );
 
+  /**
+   * @route   PUT /purchase-orders/:id
+   * @desc    Actualizar una orden de compra por su ID (solo si está en estado PENDIENTE)
+   * @access  ADMIN, CAPATAZ
+   */
   router.put(
     '/:id',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
@@ -41,10 +59,60 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
     purchaseOrderController.update
   );
 
+  /**
+   * @route   PATCH /purchase-orders/:id/status
+   * @desc    Actualizar el estado de una orden de compra (aprobar, cancelar, etc.)
+   * @access  ADMIN only
+   */
+  router.patch(
+    '/:id/status',
+    authorize(UserRole.ADMIN),
+    validateData(UpdatePurchaseOrderStatusDto),
+    purchaseOrderController.updateStatus
+  );
+
+  /**
+   * @route   GET /purchase-orders/:id/receipts
+   * @desc    Obtener todas las recepciones de una orden de compra
+   * @access  ADMIN, CAPATAZ
+   */
+  router.get(
+    '/:id/receipts',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    purchaseOrderController.getReceipts
+  );
+
+  /**
+   * @route   DELETE /purchase-orders/:id
+   * @desc    Eliminar una orden de compra (soft delete)
+   * @access  ADMIN, CAPATAZ
+   */
   router.delete(
     '/:id',
     authorize(UserRole.ADMIN, UserRole.CAPATAZ),
     purchaseOrderController.delete
+  );
+
+  /**
+   * @route   PATCH /purchase-orders/:id/restore
+   * @desc    Restaurar una orden de compra eliminada
+   * @access  ADMIN, CAPATAZ
+   */
+  router.patch(
+    '/:id/restore',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    purchaseOrderController.restore
+  );
+
+  /**
+   * @route   DELETE /purchase-orders/:id/permanent
+   * @desc    Eliminar permanentemente una orden de compra (hard delete)
+   * @access  ADMIN only
+   */
+  router.delete(
+    '/:id/permanent',
+    authorize(UserRole.ADMIN),
+    purchaseOrderController.hardDelete
   );
 
   return router;

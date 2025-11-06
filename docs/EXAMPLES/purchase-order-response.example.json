@@ -1,0 +1,155 @@
+{
+  "message": "Orden de compra obtenida exitosamente",
+  "data": {
+    "id": "uuid-orden-compra",
+    "status": "RECIBIDA_PARCIAL",
+    "totalAmount": 730000,
+    "createdAt": "2025-11-01T10:00:00.000Z",
+    "updatedAt": "2025-11-05T14:30:00.000Z",
+    "deletedAt": null,
+    "supplierId": "uuid-proveedor",
+    "supplier": {
+      "id": "uuid-proveedor",
+      "name": "Sistemas de Riego Cuyo",
+      "taxId": "30-71234571-2",
+      "address": "Zona Industrial Este, Galpón 5",
+      "contactEmail": "contacto@riegocuyo.com",
+      "phoneNumber": "+54 261 4890123"
+    },
+    "details": [
+      {
+        "id": "uuid-detalle-1",
+        "purchaseOrderId": "uuid-orden-compra",
+        "input": {
+          "id": "uuid-insumo-1",
+          "name": "Cinta de Riego por Goteo (rollo 100m)",
+          "unit": "UNIDAD"
+        },
+        "quantity": 50,
+        "unitPrice": 8900,
+        "subtotal": 445000,
+        "quantityReceived": 50,
+        "quantityPending": 0,
+        "isFullyReceived": true,
+        "percentageReceived": 100,
+        "receiptHistory": [
+          {
+            "receiptId": "uuid-remito-1",
+            "quantityReceived": 30,
+            "receivedAt": "2025-10-20T14:00:00.000Z",
+            "notes": "Primera entrega parcial de cintas. Pendiente: 20 unidades"
+          },
+          {
+            "receiptId": "uuid-remito-2",
+            "quantityReceived": 20,
+            "receivedAt": "2025-10-25T09:15:00.000Z",
+            "notes": "Completado: recibidas 20 cintas finales (50/50 total)"
+          }
+        ]
+      },
+      {
+        "id": "uuid-detalle-2",
+        "purchaseOrderId": "uuid-orden-compra",
+        "input": {
+          "id": "uuid-insumo-2",
+          "name": "Goteros Autocompensados 2L/h",
+          "unit": "UNIDAD"
+        },
+        "quantity": 1000,
+        "unitPrice": 35,
+        "subtotal": 35000,
+        "quantityReceived": 1000,
+        "quantityPending": 0,
+        "isFullyReceived": true,
+        "percentageReceived": 100,
+        "receiptHistory": [
+          {
+            "receiptId": "uuid-remito-1",
+            "quantityReceived": 500,
+            "receivedAt": "2025-10-20T14:00:00.000Z",
+            "notes": "Primera entrega parcial de goteros. Pendiente: 500 unidades"
+          },
+          {
+            "receiptId": "uuid-remito-2",
+            "quantityReceived": 500,
+            "receivedAt": "2025-10-25T09:15:00.000Z",
+            "notes": "Completado: recibidos 500 goteros finales (1000/1000 total)"
+          }
+        ]
+      },
+      {
+        "id": "uuid-detalle-3",
+        "purchaseOrderId": "uuid-orden-compra",
+        "input": {
+          "id": "uuid-insumo-3",
+          "name": "Válvula Solenoide 1\"",
+          "unit": "UNIDAD"
+        },
+        "quantity": 20,
+        "unitPrice": 12500,
+        "subtotal": 250000,
+        "quantityReceived": 0,
+        "quantityPending": 20,
+        "isFullyReceived": false,
+        "percentageReceived": 0,
+        "receiptHistory": []
+      }
+    ],
+    "receipts": [
+      {
+        "id": "uuid-remito-1",
+        "purchaseOrderId": "uuid-orden-compra",
+        "receivedById": "uuid-admin",
+        "notes": "Primera entrega parcial: cintas de riego y goteros. Faltan válvulas.",
+        "receivedAt": "2025-10-20T14:00:00.000Z",
+        "receivedBy": {
+          "id": "uuid-admin",
+          "name": "Admin",
+          "lastName": "Sistema",
+          "email": "admin@tejadahnos.com"
+        },
+        "details": [
+          {
+            "id": "uuid-receipt-detail-1",
+            "purchaseOrderDetailId": "uuid-detalle-1",
+            "quantityReceived": 30,
+            "notes": "Primera entrega parcial de cintas. Pendiente: 20 unidades"
+          },
+          {
+            "id": "uuid-receipt-detail-2",
+            "purchaseOrderDetailId": "uuid-detalle-2",
+            "quantityReceived": 500,
+            "notes": "Primera entrega parcial de goteros. Pendiente: 500 unidades"
+          }
+        ]
+      },
+      {
+        "id": "uuid-remito-2",
+        "purchaseOrderId": "uuid-orden-compra",
+        "receivedById": "uuid-admin",
+        "notes": "Segunda entrega: completando cintas y goteros. Válvulas aún pendientes.",
+        "receivedAt": "2025-10-25T09:15:00.000Z",
+        "receivedBy": {
+          "id": "uuid-admin",
+          "name": "Admin",
+          "lastName": "Sistema",
+          "email": "admin@tejadahnos.com"
+        },
+        "details": [
+          {
+            "id": "uuid-receipt-detail-3",
+            "purchaseOrderDetailId": "uuid-detalle-1",
+            "quantityReceived": 20,
+            "notes": "Completado: recibidas 20 cintas finales (50/50 total)"
+          },
+          {
+            "id": "uuid-receipt-detail-4",
+            "purchaseOrderDetailId": "uuid-detalle-2",
+            "quantityReceived": 500,
+            "notes": "Completado: recibidos 500 goteros finales (1000/1000 total)"
+          }
+        ]
+      }
+    ]
+  }
+}
