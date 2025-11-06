@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { DataSource } from 'typeorm';
 import { GoodsReceiptController } from '@controllers/goods-receipt.controller';
-import { GoodsReceiptService } from '@services/goods-receipt.service';
 import { authenticate } from '@middlewares/auth.middleware';
 import { authorize } from '@middlewares/authorize.middleware';
 import { validateData } from '@middlewares/validation.middleware';
@@ -10,8 +9,7 @@ import { UserRole } from '@/enums';
 
 export const createGoodsReceiptRoutes = (dataSource: DataSource): Router => {
   const router = Router();
-  const goodsReceiptService = new GoodsReceiptService(dataSource);
-  const goodsReceiptController = new GoodsReceiptController(goodsReceiptService);
+  const goodsReceiptController = new GoodsReceiptController(dataSource);
 
   router.use(authenticate);
 

@@ -4,9 +4,14 @@ import { GoodsReceiptService } from '@services/goods-receipt.service';
 import { CreateGoodsReceiptDto } from '@dtos/goods-receipt.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { isValidUUID } from '@/utils/validation.utils';
+import { DataSource } from 'typeorm';
 
 export class GoodsReceiptController {
-  constructor(private readonly goodsReceiptService: GoodsReceiptService) {}
+  private goodsReceiptService: GoodsReceiptService;
+
+  constructor(dataSource: DataSource) {
+    this.goodsReceiptService = new GoodsReceiptService(dataSource);
+  }
 
   /**
    * POST /goods-receipts

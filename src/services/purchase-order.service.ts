@@ -46,9 +46,9 @@ export class PurchaseOrderService {
       // Crear un mapa de inputs para acceso rápido
       const inputMap = new Map(inputs.map(input => [input.id, input]));
 
-      // Calcular totalAmount y preparar detalles con precios por defecto
+      // Calcular totalAmount y preparar datos de detalles
       let totalAmount = 0;
-      const details: PurchaseOrderDetail[] = [];
+      const detailsData: Array<{ inputId: string; quantity: number; unitPrice: number }> = [];
 
       for (const detail of data.details ?? []) {
         const input = inputMap.get(detail.inputId);
@@ -62,13 +62,11 @@ export class PurchaseOrderService {
         const quantity = Number(detail.quantity);
         totalAmount += quantity * unitPrice;
 
-        const orderDetail = manager.create(PurchaseOrderDetail, {
+        detailsData.push({
           inputId: detail.inputId,
           quantity,
           unitPrice,
         });
-
-        details.push(orderDetail);
       }
 
       // Crear la orden de compra con status PENDIENTE por defecto
@@ -76,11 +74,24 @@ export class PurchaseOrderService {
         supplierId: data.supplierId,
         status: PurchaseOrderStatus.PENDIENTE,
         totalAmount,
-        details,
       });
 
-      // Guardar (cascade guardará los detalles automáticamente)
       const savedPurchaseOrder = await manager.save(PurchaseOrder, purchaseOrder);
+
+      // Insertar los detalles usando QueryBuilder para evitar problemas de mapeo
+      for (const detailData of detailsData) {
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into(PurchaseOrderDetail)
+          .values({
+            purchaseOrderId: savedPurchaseOrder.id,
+            inputId: detailData.inputId,
+            quantity: detailData.quantity,
+            unitPrice: detailData.unitPrice,
+          })
+          .execute();
+      }
 
       // Retornar con todas las relaciones cargadas
       const result = await manager.findOne(PurchaseOrder, {
@@ -182,59 +193,83 @@ export class PurchaseOrderService {
 
       // Actualizar detalles si se proporcionan
       if (data.details && data.details.length > 0) {
-        // Validar que todos los insumos existen
-        const detailInputIds = data.details.map(detail => detail.inputId);
-        const uniqueInputIds = [...new Set(detailInputIds)];
+        // Separar detalles en tres grupos:
+        // 1. Detalles con id: actualizar
+        // 2. Detalles sin id pero con inputId: crear nuevos
+        // 3. Detalles existentes que no están en la lista: eliminar
 
-        const inputs = await manager.findBy(Input, { id: In(uniqueInputIds) });
+        const detailsToUpdate = data.details.filter(d => d.id);
+        const detailsToCreate = data.details.filter(d => !d.id && d.inputId);
+        const detailIdsToKeep = new Set(detailsToUpdate.map(d => d.id));
 
-        if (inputs.length !== uniqueInputIds.length) {
-          throw new HttpException(StatusCodes.NOT_FOUND, 'Uno o más insumos no fueron encontrados');
+        // 1. Actualizar detalles existentes usando su ID (PK)
+        for (const detailUpdate of detailsToUpdate) {
+          const existingDetail = purchaseOrder.details.find(d => d.id === detailUpdate.id);
+          
+          if (!existingDetail) {
+            throw new HttpException(
+              StatusCodes.BAD_REQUEST,
+              `El detalle con ID ${detailUpdate.id} no pertenece a esta orden de compra`
+            );
+          }
+
+          // Actualizar usando QueryBuilder con el ID (más eficiente y evita problemas de mapeo)
+          const updateData: any = {};
+          
+          if (detailUpdate.quantity !== undefined) {
+            updateData.quantity = Number(detailUpdate.quantity);
+          }
+          
+          if (detailUpdate.unitPrice !== undefined) {
+            updateData.unitPrice = Number(detailUpdate.unitPrice);
+          }
+
+          if (Object.keys(updateData).length > 0) {
+            await manager
+              .createQueryBuilder()
+              .update(PurchaseOrderDetail)
+              .set(updateData)
+              .where('id = :id', { id: detailUpdate.id })
+              .execute();
+          }
         }
 
-        // Crear mapas para comparación
-        const existingDetailsMap = new Map(
-          purchaseOrder.details.map(detail => [detail.inputId, detail])
-        );
-        const newDetailsMap = new Map(
-          data.details.map(detail => [detail.inputId, detail])
-        );
-
-        // 1. Actualizar o mantener detalles existentes
+        // 2. Eliminar detalles que ya no están en la lista
         for (const existingDetail of purchaseOrder.details) {
-          const newDetailData = newDetailsMap.get(existingDetail.inputId);
-
-          if (newDetailData) {
-            // Actualizar cantidad y/o precio si cambiaron
-            if (newDetailData.quantity !== undefined) {
-              existingDetail.quantity = Number(newDetailData.quantity);
-            }
-            if (newDetailData.unitPrice !== undefined) {
-              existingDetail.unitPrice = Number(newDetailData.unitPrice);
-            }
-            await manager.save(PurchaseOrderDetail, existingDetail);
-          } else {
-            // 2. Eliminar detalles que ya no están en la lista
+          if (!detailIdsToKeep.has(existingDetail.id)) {
             await manager.remove(PurchaseOrderDetail, existingDetail);
           }
         }
 
-        // 3. Agregar nuevos detalles que no existían
-        for (const newDetailData of data.details) {
-          if (!existingDetailsMap.has(newDetailData.inputId)) {
-            const input = inputs.find(i => i.id === newDetailData.inputId);
-            const unitPrice = newDetailData.unitPrice !== undefined && newDetailData.unitPrice !== null
-              ? Number(newDetailData.unitPrice)
+        // 3. Crear nuevos detalles (los que tienen inputId pero no id)
+        if (detailsToCreate.length > 0) {
+          // Validar que todos los insumos existen
+          const inputIds = detailsToCreate.map(d => d.inputId!);
+          const inputs = await manager.findBy(Input, { id: In(inputIds) });
+
+          if (inputs.length !== inputIds.length) {
+            throw new HttpException(StatusCodes.NOT_FOUND, 'Uno o más insumos no fueron encontrados');
+          }
+
+          const inputMap = new Map(inputs.map(input => [input.id, input]));
+
+          for (const newDetail of detailsToCreate) {
+            const input = inputMap.get(newDetail.inputId!);
+            const unitPrice = newDetail.unitPrice !== undefined && newDetail.unitPrice !== null
+              ? Number(newDetail.unitPrice)
               : Number(input?.costPerUnit) || 0;
 
-            const newDetail = manager.create(PurchaseOrderDetail, {
-              purchaseOrderId: purchaseOrder.id,
-              inputId: newDetailData.inputId,
-              quantity: Number(newDetailData.quantity),
-              unitPrice,
-            });
-
-            await manager.save(PurchaseOrderDetail, newDetail);
+            await manager
+              .createQueryBuilder()
+              .insert()
+              .into(PurchaseOrderDetail)
+              .values({
+                purchaseOrderId: purchaseOrder.id,
+                inputId: newDetail.inputId!,
+                quantity: Number(newDetail.quantity),
+                unitPrice,
+              })
+              .execute();
           }
         }
 
@@ -248,8 +283,16 @@ export class PurchaseOrderService {
         }, 0);
       }
 
-      // Guardar cambios en la orden
-      await manager.save(PurchaseOrder, purchaseOrder);
+      // Actualizar solo los campos modificables de la orden usando QueryBuilder
+      await manager
+        .createQueryBuilder()
+        .update(PurchaseOrder)
+        .set({
+          supplierId: purchaseOrder.supplierId,
+          totalAmount: purchaseOrder.totalAmount,
+        })
+        .where('id = :id', { id: purchaseOrder.id })
+        .execute();
 
       // Retornar con todas las relaciones cargadas
       const result = await manager.findOne(PurchaseOrder, {
@@ -280,7 +323,7 @@ export class PurchaseOrderService {
    * (útil para aprobar una orden y establecer los precios finales negociados)
    * @param id ID de la orden de compra
    * @param status Nuevo estado
-   * @param details Opcional: array con inputId y unitPrice para actualizar precios
+   * @param details Opcional: array con detailId (PK del PurchaseOrderDetail) y unitPrice para actualizar precios
    * @returns Promise<PurchaseOrder> La orden de compra actualizada
    */
   public async updateStatus(
@@ -303,25 +346,56 @@ export class PurchaseOrderService {
 
       // Si se proporcionan precios para actualizar (típicamente al aprobar)
       if (details && details.length > 0) {
-        const pricesMap = new Map(
-          details.map(item => [item.inputId, item.unitPrice])
-        );
+        // Validar que todos los detailIds existen en la orden
+        const detailIds = details.map(d => d.detailId);
+        const validDetailIds = purchaseOrder.details.map(d => d.id);
+        const invalidIds = detailIds.filter(id => !validDetailIds.includes(id));
 
-        for (const detail of purchaseOrder.details) {
-          const newPrice = pricesMap.get(detail.inputId);
-          if (newPrice !== undefined) {
-            detail.unitPrice = Number(newPrice);
-            await manager.save(PurchaseOrderDetail, detail);
-          }
+        if (invalidIds.length > 0) {
+          throw new HttpException(
+            StatusCodes.BAD_REQUEST,
+            `Los siguientes IDs de detalles no pertenecen a esta orden: ${invalidIds.join(', ')}`
+          );
         }
 
-        // Recalcular totalAmount
-        purchaseOrder.totalAmount = purchaseOrder.details.reduce((acc, detail) => {
+        // Actualizar precios usando QueryBuilder con el ID del detalle (PK)
+        for (const priceUpdate of details) {
+          await manager
+            .createQueryBuilder()
+            .update(PurchaseOrderDetail)
+            .set({ unitPrice: Number(priceUpdate.unitPrice) })
+            .where('id = :id', { id: priceUpdate.detailId })
+            .execute();
+        }
+
+        // Recalcular totalAmount - recargar detalles actualizados
+        const updatedDetails = await manager.find(PurchaseOrderDetail, {
+          where: { purchaseOrderId: purchaseOrder.id },
+        });
+
+        const newTotalAmount = updatedDetails.reduce((acc, detail) => {
           return acc + Number(detail.quantity) * Number(detail.unitPrice);
         }, 0);
-      }
 
-      await manager.save(PurchaseOrder, purchaseOrder);
+        // Actualizar status y totalAmount usando QueryBuilder
+        await manager
+          .createQueryBuilder()
+          .update(PurchaseOrder)
+          .set({ 
+            status,
+            totalAmount: newTotalAmount,
+          })
+          .where('id = :id', { id: purchaseOrder.id })
+          .execute();
+      } else {
+        // Solo actualizar el status
+        await manager
+          .createQueryBuilder()
+          .update(PurchaseOrder)
+          .set({ status })
+          .where('id = :id', { id: purchaseOrder.id })
+          .execute();
+      }
 
       // Retornar con todas las relaciones cargadas
       const result = await manager.findOne(PurchaseOrder, {

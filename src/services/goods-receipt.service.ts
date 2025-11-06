@@ -8,20 +8,15 @@ import { CreateGoodsReceiptDto } from '@dtos/goods-receipt.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { StatusCodes } from 'http-status-codes';
 import { PurchaseOrderStatus } from '@/enums';
+import { parseDateToUTC, nowUTC } from '@/utils/date.utils';
 
 export class GoodsReceiptService {
-  private readonly goodsReceiptRepository: Repository<GoodsReceipt>;
-  private readonly goodsReceiptDetailRepository: Repository<GoodsReceiptDetail>;
-  private readonly purchaseOrderRepository: Repository<PurchaseOrder>;
-  private readonly purchaseOrderDetailRepository: Repository<PurchaseOrderDetail>;
-  private readonly inputRepository: Repository<Input>;
+  private goodsReceiptRepository: Repository<GoodsReceipt>;
+  private purchaseOrderRepository: Repository<PurchaseOrder>;
 
-  constructor(private readonly dataSource: DataSource) {
+  constructor(private dataSource: DataSource) {
     this.goodsReceiptRepository = this.dataSource.getRepository(GoodsReceipt);
-    this.goodsReceiptDetailRepository = this.dataSource.getRepository(GoodsReceiptDetail);
     this.purchaseOrderRepository = this.dataSource.getRepository(PurchaseOrder);
-    this.purchaseOrderDetailRepository = this.dataSource.getRepository(PurchaseOrderDetail);
-    this.inputRepository = this.dataSource.getRepository(Input);
   }
 
   /**
@@ -31,6 +26,21 @@ export class GoodsReceiptService {
    * @returns Promise<GoodsReceipt> La recepción creada
    */
   public async create(data: CreateGoodsReceiptDto, userId: string): Promise<GoodsReceipt> {
+    // Validaciones previas fuera de la transacción
+    if (!data.details || data.details.length === 0) {
+      throw new HttpException(StatusCodes.BAD_REQUEST, 'Debe incluir al menos un detalle en la recepción');
+    }
+
+    // Validar que todos los detalles tengan purchaseOrderDetailId
+    for (const detail of data.details) {
+      if (!detail.purchaseOrderDetailId) {
+        throw new HttpException(
+          StatusCodes.BAD_REQUEST, 
+          'Todos los detalles deben tener un purchaseOrderDetailId válido'
+        );
+      }
+    }
+
     return await this.dataSource.transaction(async (manager) => {
       // 1. Validar que la orden de compra existe y está APROBADA
       const purchaseOrder = await manager.findOne(PurchaseOrder, {
@@ -84,9 +94,16 @@ export class GoodsReceiptService {
       }
 
       // 4. Crear la recepción principal
+      // Si se proporciona receivedDate, parsearla correctamente en UTC
+      // Si no, usar la fecha/hora actual
+      const receivedAt = data.receivedDate 
+        ? parseDateToUTC(data.receivedDate) 
+        : nowUTC();
+
       const receipt = manager.create(GoodsReceipt, {
         purchaseOrderId: purchaseOrder.id,
         receivedById: userId,
+        receivedAt,
       });
       
       if (data.notes) {
@@ -99,20 +116,38 @@ export class GoodsReceiptService {
       for (const detailDto of data.details) {
         const poDetail = purchaseOrder.details.find(d => d.id === detailDto.purchaseOrderDetailId);
         
-        if (!poDetail) continue;
+        if (!poDetail) {
+          throw new HttpException(
+            StatusCodes.BAD_REQUEST,
+            `Detalle de orden de compra no encontrado: ${detailDto.purchaseOrderDetailId}`
+          );
+        }
 
-        // Crear el detalle de recepción
-        const receiptDetail = manager.create(GoodsReceiptDetail, {
+        // Validar que purchaseOrderDetailId no sea null o undefined
+        if (!detailDto.purchaseOrderDetailId) {
+          throw new HttpException(
+            StatusCodes.BAD_REQUEST,
+            'El ID del detalle de la orden de compra es requerido'
+          );
+        }
+
+        // Crear el detalle de recepción usando QueryBuilder para INSERT directo
+        const insertValues: any = {
           goodsReceiptId: savedReceipt.id,
           purchaseOrderDetailId: detailDto.purchaseOrderDetailId,
           quantityReceived: Number(detailDto.quantityReceived),
-        });
+        };
         
         if (detailDto.notes) {
-          receiptDetail.notes = detailDto.notes;
+          insertValues.notes = detailDto.notes;
         }
-
-        await manager.save(GoodsReceiptDetail, receiptDetail);
+        
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into(GoodsReceiptDetail)
+          .values(insertValues)
+          .execute();
 
         // Actualizar el inventario del insumo con costo promedio ponderado
         const input = poDetail.input;
@@ -133,23 +168,35 @@ export class GoodsReceiptService {
       }
 
       // 6. Actualizar el estado de la orden de compra
-      // Recargar detalles con las recepciones actualizadas
-      const updatedPODetails = await manager.find(PurchaseOrderDetail, {
-        where: { purchaseOrderId: purchaseOrder.id },
-        relations: ['receiptDetails'],
-      });
+      // Usar QueryBuilder para obtener las cantidades sin cargar relaciones completas
+      const detailsWithReceivedQty = await manager
+        .createQueryBuilder(PurchaseOrderDetail, 'pod')
+        .leftJoin('pod.receiptDetails', 'grd')
+        .select('pod.id', 'id')
+        .addSelect('pod.quantity', 'quantity')
+        .addSelect('COALESCE(SUM(grd.quantityReceived), 0)', 'totalReceived')
+        .where('pod.purchaseOrderId = :purchaseOrderId', { purchaseOrderId: purchaseOrder.id })
+        .groupBy('pod.id')
+        .addGroupBy('pod.quantity')
+        .getRawMany();
 
-      const allFullyReceived = updatedPODetails.every(detail => {
+      const allFullyReceived = detailsWithReceivedQty.every(detail => {
         const orderedQuantity = Number(detail.quantity);
-        const receivedQuantity = detail.quantityReceived; // Usa el getter
+        const receivedQuantity = Number(detail.totalReceived);
         return receivedQuantity >= orderedQuantity;
       });
 
-      purchaseOrder.status = allFullyReceived
+      const newStatus = allFullyReceived
         ? PurchaseOrderStatus.RECIBIDA
         : PurchaseOrderStatus.RECIBIDA_PARCIAL;
 
-      await manager.save(PurchaseOrder, purchaseOrder);
+      // Actualizar solo el campo status usando QueryBuilder para evitar problemas con relaciones
+      await manager
+        .createQueryBuilder()
+        .update(PurchaseOrder)
+        .set({ status: newStatus })
+        .where('id = :id', { id: purchaseOrder.id })
+        .execute();
 
       // 7. Retornar la recepción con todas las relaciones
       const result = await manager.findOne(GoodsReceipt, {

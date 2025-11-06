@@ -18,6 +18,30 @@ export class PurchaseOrderDetailDto {
   unitPrice?: number;
 }
 
+/**
+ * DTO para actualizar un detalle existente usando su ID
+ * Se usa en el método update cuando ya existe un detalle
+ */
+export class UpdatePurchaseOrderDetailDto {
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID del detalle debe ser un UUID válido' })
+  id?: string; // Si se proporciona, se actualiza un detalle existente
+
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID del insumo debe ser un UUID válido' })
+  inputId?: string; // Si no se proporciona id, se usa inputId para crear nuevo
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'La cantidad debe ser un número válido' })
+  @Min(0.01, { message: 'La cantidad debe ser mayor a 0' })
+  quantity?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'El precio unitario debe ser un número válido' })
+  @Min(0, { message: 'El precio unitario no puede ser negativo' })
+  unitPrice?: number;
+}
+
 export class CreatePurchaseOrderDto {
   @IsUUID('4', { message: 'El ID del proveedor debe ser un UUID válido' })
   @IsNotEmpty({ message: 'El ID del proveedor no puede estar vacío' })
@@ -37,14 +61,14 @@ export class UpdatePurchaseOrderDto {
   @IsOptional()
   @IsArray({ message: 'Los detalles deben ser un array' })
   @ValidateNested({ each: true })
-  @Type(() => PurchaseOrderDetailDto)
-  details?: PurchaseOrderDetailDto[];
+  @Type(() => UpdatePurchaseOrderDetailDto)
+  details?: UpdatePurchaseOrderDetailDto[];
 }
 
 export class PurchaseOrderDetailPriceDto {
-  @IsUUID('4', { message: 'El ID del insumo debe ser un UUID válido' })
-  @IsNotEmpty({ message: 'El ID del insumo no puede estar vacío' })
-  inputId: string;
+  @IsUUID('4', { message: 'El ID del detalle debe ser un UUID válido' })
+  @IsNotEmpty({ message: 'El ID del detalle no puede estar vacío' })
+  detailId: string; // Cambio: usar el ID del PurchaseOrderDetail directamente
 
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'El precio unitario debe ser un número válido' })
   @Min(0, { message: 'El precio unitario no puede ser negativo' })
