@@ -11,7 +11,9 @@ export class GoodsReceipt {
   @Column('text', { nullable: true })
   notes: string;
 
-  @CreateDateColumn()
+  // Fecha de recepción - puede ser especificada o usar la fecha actual
+  // Se guarda como TIMESTAMP en UTC
+  @Column('timestamp with time zone', { default: () => 'CURRENT_TIMESTAMP' })
   receivedAt: Date;
 
   @UpdateDateColumn()

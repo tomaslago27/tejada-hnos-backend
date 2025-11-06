@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
 
 export class GoodsReceiptDetailDto {
   @IsUUID('4', { message: 'El detalle de la orden debe ser un UUID válido' })
@@ -20,6 +20,10 @@ export class CreateGoodsReceiptDto {
   @IsUUID('4', { message: 'La orden de compra debe ser un UUID válido' })
   @IsNotEmpty({ message: 'La orden de compra es obligatoria' })
   purchaseOrderId: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'La fecha de recepción debe ser una fecha válida (YYYY-MM-DD)' })
+  receivedDate?: string;
 
   @IsOptional()
   @IsString({ message: 'Las notas deben ser texto' })

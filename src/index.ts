@@ -5,6 +5,9 @@ import { ENV } from "@config/environment";
 import { DatabaseService } from "@services/database.service";
 import { errorHandler } from "@middlewares/error-handler.middleware";
 
+// Forzar zona horaria UTC para todo el proceso de Node.js
+process.env.TZ = 'UTC';
+
 // Importar las funciones creadoras de rutas
 import { createAuthRoutes } from "@routes/auth.routes";
 import { createUserRoutes } from "@routes/user.routes";
@@ -29,6 +32,12 @@ const startServer = async () => {
     // 2. Configurar Middlewares
     app.use(cors());
     app.use(express.json());
+    
+    // Middleware para serializar fechas consistentemente en UTC (opcional)
+    // Descomenta la siguiente línea si quieres forzar que todas las respuestas 
+    // conviertan Date objects a ISO strings automáticamente
+    // import { dateSerializerMiddleware } from "@middlewares/date-serializer.middleware";
+    // app.use(dateSerializerMiddleware);
       
     // 3. Configurar Rutas, inyectando el dataSource
     app.use("/auth", createAuthRoutes(dataSource));

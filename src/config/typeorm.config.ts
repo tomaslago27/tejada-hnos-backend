@@ -15,4 +15,8 @@ export const PostgreSQLDataSource = new DataSource({
     entities: ["src/entities/*.ts"],
     synchronize: true, // Set to false in production
     logging: true,
+    extra: {
+        // Configuración adicional para PostgreSQL - forzar UTC
+        timezone: 'UTC',
+    },
 });
