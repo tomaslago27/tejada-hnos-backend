@@ -72,6 +72,17 @@ export const createPurchaseOrderRoutes = (dataSource: DataSource): Router => {
   );
 
   /**
+   * @route   GET /purchase-orders/:id/receipts
+   * @desc    Obtener todas las recepciones de una orden de compra
+   * @access  ADMIN, CAPATAZ
+   */
+  router.get(
+    '/:id/receipts',
+    authorize(UserRole.ADMIN, UserRole.CAPATAZ),
+    purchaseOrderController.getReceipts
+  );
+
+  /**
    * @route   DELETE /purchase-orders/:id
    * @desc    Eliminar una orden de compra (soft delete)
    * @access  ADMIN, CAPATAZ

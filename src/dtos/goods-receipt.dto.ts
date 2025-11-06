@@ -10,6 +10,10 @@ export class GoodsReceiptDetailDto {
   @Min(0.01, { message: 'La cantidad recibida debe ser mayor a 0' })
   @IsNotEmpty({ message: 'La cantidad recibida es obligatoria' })
   quantityReceived: number;
+
+  @IsOptional()
+  @IsString({ message: 'Las notas deben ser texto' })
+  notes?: string;
 }
 
 export class CreateGoodsReceiptDto {

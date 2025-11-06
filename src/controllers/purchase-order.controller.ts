@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { PurchaseOrderService } from '@services/purchase-order.service';
+import { GoodsReceiptService } from '@services/goods-receipt.service';
 import { HttpException } from '@/exceptions/HttpException';
 import { isValidUUID } from '@/utils/validation.utils';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from '@dtos/purchase-order.dto';
@@ -8,9 +9,11 @@ import { DataSource } from 'typeorm';
 
 export class PurchaseOrderController {
   private purchaseOrderService: PurchaseOrderService;
+  private goodsReceiptService: GoodsReceiptService;
 
   constructor(private dataSource: DataSource) {
     this.purchaseOrderService = new PurchaseOrderService(this.dataSource);
+    this.goodsReceiptService = new GoodsReceiptService(this.dataSource);
   }
 
   /**
@@ -144,7 +147,7 @@ export class PurchaseOrderController {
     }
   };
 
-  /**
+    /**
    * PATCH /purchase-orders/:id/status
    * Actualizar el estado de una orden de compra
    * Permite cambiar el estado y opcionalmente actualizar precios unitarios
@@ -176,6 +179,39 @@ export class PurchaseOrderController {
       next(error);
     }
   };
+
+  /**
+   * GET /purchase-orders/:id/receipts
+   * Obtener todas las recepciones de una orden de compra
+   */
+  public getReceipts = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra es requerido');
+      }
+
+      if (!isValidUUID(id)) {
+        throw new HttpException(StatusCodes.BAD_REQUEST, 'El ID de la orden de compra no es un UUID válido');
+      }
+
+      const receipts = await this.goodsReceiptService.findByPurchaseOrder(id);
+
+      res.status(StatusCodes.OK).json({
+        data: receipts,
+        count: receipts.length,
+        message: 'Recepciones de la orden obtenidas exitosamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * DELETE /purchase-orders/:id
+   * Eliminar una orden de compra (soft delete)
+   */
 
   /**
    * DELETE /purchase-orders/:id

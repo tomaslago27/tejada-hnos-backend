@@ -327,6 +327,57 @@ GET /purchase-orders/uuid-de-la-orden
 }
 ```
 
+### 4.3. Consultar recepciones de una orden
+
+**Endpoint:** `GET /purchase-orders/:id/receipts`  
+**Auth:** ADMIN, CAPATAZ
+
+```http
+GET /purchase-orders/uuid-de-la-orden/receipts
+```
+
+### Response (200 OK)
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid-receipt-1",
+      "receivedAt": "2025-11-05T14:30:00Z",
+      "notes": "Primera entrega parcial - Remito #123",
+      "receivedBy": {
+        "id": "uuid-user",
+        "name": "Juan Pérez",
+        "email": "juan@example.com"
+      },
+      "details": [
+        {
+          "id": "uuid-receipt-detail-1",
+          "purchaseOrderDetailId": "uuid-detail-1",
+          "quantityReceived": 300,
+          "notes": "Embalaje OK",
+          "purchaseOrderDetail": {
+            "input": {
+              "name": "Fertilizante NPK",
+              "unit": "KG"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "uuid-receipt-2",
+      "receivedAt": "2025-11-06T09:00:00Z",
+      "notes": "Segunda entrega - Completó orden",
+      "receivedBy": { /* ... */ },
+      "details": [ /* ... */ ]
+    }
+  ],
+  "count": 2,
+  "message": "Recepciones de la orden obtenidas exitosamente"
+}
+```
+
 ---
 
 ## 🗑️ 5. Eliminar Orden
