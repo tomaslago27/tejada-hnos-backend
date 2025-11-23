@@ -73,12 +73,17 @@ export class ActivityService {
                     await this.validateAndDeductStock(inputsUsed, inputs, transactionalEntityManager);
                 }
 
-                newActivity.inputsUsed = inputsUsed.map(usageDto => 
-                    this.inputUsageRepository.create({
+                // Crear InputUsages capturando el costo histórico del Input al momento de la transacción
+                newActivity.inputsUsed = inputsUsed.map(usageDto => {
+                    const input = inputs.find(i => i.id === usageDto.inputId);
+                    const historicCost = input ? Number(input.costPerUnit || 0) : 0;
+                    
+                    return this.inputUsageRepository.create({
                         inputId: usageDto.inputId,
                         quantityUsed: usageDto.quantityUsed,
-                    })
-                );
+                        historicCostPerUnit: historicCost, // Capturar costo histórico para precisión en reportes
+                    });
+                });
             }
 
             // Guardar la actividad (cascade guardará los InputUsage)

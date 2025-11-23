@@ -1,0 +1,152 @@
+# API de Reportes Financieros - Tests
+# Requerimiento B2.11: Endpoint de Business Intelligence
+
+@baseUrl = http://localhost:3000
+@adminEmail = admin@tejadahnos.com
+@adminPassword = admin123
+
+# Credenciales de seed (asegúrate que coincidan con `src/scripts/seed-test-users.ts`)
+@capatazEmail = capataz@tejadahnos.com
+@capatazPassword = 1capataz123
+@operarioEmail = operario@tejadahnos.com
+@operarioPassword = 1operario123
+
+# Plot a usar en pruebas (reemplazar por uno válido si hace falta)
+@plotId = 1a5affbe-c587-4896-8f3f-501adb965917
+# @name loginAdmin
+POST {{baseUrl}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+###
+@accessToken = {{loginAdmin.response.body.accessToken}}
+
+### ============================================================================
+### 2. OBTENER REPORTE DE PARCELA (Caso exitoso)
+### ============================================================================
+# @name getPlotReport
+GET {{baseUrl}}/reports/plot-summary/{{plotId}} HTTP/1.1
+Authorization: Bearer {{accessToken}}
+
+### Ejemplo con ID real (reemplazar con un plotId válido de tu BD):
+### GET {{baseUrl}}/reports/plot-summary/550e8400-e29b-41d4-a716-446655440000
+
+### ============================================================================
+### 3. LISTAR PARCELAS DISPONIBLES (para obtener IDs)
+### ============================================================================
+GET {{baseUrl}}/plots HTTP/1.1
+Authorization: Bearer {{accessToken}}
+
+### ============================================================================
+### 4. ERROR: Acceso sin token (401 Unauthorized)
+### ============================================================================
+GET {{baseUrl}}/reports/plot-summary/550e8400-e29b-41d4-a716-446655440000 HTTP/1.1
+
+### ============================================================================
+### 5. ERROR: ID de parcela inválido (400 Bad Request)
+### ============================================================================
+GET {{baseUrl}}/reports/plot-summary/invalid-uuid HTTP/1.1
+Authorization: Bearer {{accessToken}}
+
+### ============================================================================
+### 6. ERROR: Parcela no encontrada (404 Not Found)
+### ============================================================================
+GET {{baseUrl}}/reports/plot-summary/00000000-0000-0000-0000-000000000000 HTTP/1.1
+Authorization: Bearer {{accessToken}}
+
+### ============================================================================
+### 7. LOGIN COMO CAPATAZ (para probar permisos)
+### ============================================================================
+# @name loginCapataz
+POST {{baseUrl}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "{{capatazEmail}}",
+  "password": "{{capatazPassword}}"
+}
+
+###
+@capatazToken = {{loginCapataz.response.body.accessToken}}
+
+### ============================================================================
+### 8. CAPATAZ: Acceder a parcela de su campo gestionado (200 OK)
+### ============================================================================
+GET {{baseUrl}}/reports/plot-summary/PLOT_ID_DE_CAMPO_GESTIONADO HTTP/1.1
+Authorization: Bearer {{capatazToken}}
+
+### ============================================================================
+### 9. CAPATAZ: Intentar acceder a parcela fuera de sus campos (403 Forbidden)
+### ============================================================================
+GET {{baseUrl}}/reports/plot-summary/PLOT_ID_FUERA_DE_GESTION HTTP/1.1
+Authorization: Bearer {{capatazToken}}
+
+### ============================================================================
+### 10. LOGIN COMO OPERARIO (para probar restricción de acceso)
+### ============================================================================
+# @name loginOperario
+POST {{baseUrl}}/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "{{operarioEmail}}",
+  "password": "{{operarioPassword}}"
+}
+
+###
+@operarioToken = {{loginOperario.response.body.accessToken}}
+
+### ============================================================================
+### 11. OPERARIO: Intentar acceder a reporte (403 Forbidden)
+### ============================================================================
+GET {{baseUrl}}/reports/plot-summary/550e8400-e29b-41d4-a716-446655440000 HTTP/1.1
+Authorization: Bearer {{operarioToken}}
+
+### ============================================================================
+### NOTAS:
+### ============================================================================
+### - Reemplazar PLOT_ID_AQUI con un ID real de tu base de datos
+### - Verificar que existan usuarios con los emails y passwords especificados
+### - Si usas datos de seed, ajustar las credenciales según tus scripts
+### - Para obtener IDs válidos, usar primero el endpoint GET /plots
+###
+### RESPUESTA ESPERADA (200 OK):
+### {
+###   "plotName": "A-01",
+###   "totalCosts": 75000.50,
+###   "totalRevenue": 120000.00,
+###   "margin": 44999.50,
+###   "costsBreakdown": {
+###     "labor": 50000.00,
+###     "inputs": 25000.50
+###   },
+###   "activities": [
+###     {
+###       "id": "act-001",
+###       "date": "2025-11-15T08:00:00.000Z",
+###       "type": "PODA",
+###       "description": "PODA - 8h @ $150.00/h + Insumos: $500.00",
+###       "cost": 1700.00,
+###       "laborCost": 1200.00,
+###       "inputsCost": 500.00,
+###       "hoursWorked": 8,
+###       "hourlyRate": 150.00,
+###       "workerName": "Juan Pérez"
+###     }
+###   ],
+###   "plotId": "550e8400-e29b-41d4-a716-446655440000",
+###   "fieldName": "Campo Norte",
+###   "plotArea": 2.5,
+###   "varietyName": "Chandler",
+###   "costPerHectare": 30000.20,
+###   "revenuePerHectare": 48000.00,
+###   "marginPercentage": 37.50,
+###   "totalHarvestKg": 5000.00,
+###   "totalShippedKg": 4800.00,
+###   "reportGeneratedAt": "2025-11-22T10:30:00.000Z",
+###   "currency": "USD"
+### }

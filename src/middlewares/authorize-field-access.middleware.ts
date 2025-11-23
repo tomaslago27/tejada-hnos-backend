@@ -298,6 +298,7 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
 
         // ============================================================================
         // VALIDACIÓN 6: Si está accediendo a una parcela específica (GET /plots/:id)
+        // O a un reporte de parcela (GET /reports/plot-summary/:plotId)
         // ============================================================================
         if (req.params.id && (req.originalUrl.includes('/plots/') || req.path.includes('/plots/'))) {
           const plotId = req.params.id;
@@ -311,6 +312,30 @@ export const authorizeFieldAccess = (dataSource: DataSource) => {
             return next(new HttpException(
               StatusCodes.FORBIDDEN,
               'No tienes permisos para ver los detalles de esta parcela'
+            ));
+          }
+        }
+
+        // Validación específica para reportes de parcelas
+        if (req.params.plotId && (req.originalUrl.includes('/reports/plot-summary') || req.path.includes('/reports/plot-summary'))) {
+          const plotId = req.params.plotId;
+          const plotRepository = dataSource.getRepository(Plot);
+          const plot = await plotRepository.findOne({
+            where: { id: plotId },
+            relations: ['field']
+          });
+
+          if (!plot) {
+            return next(new HttpException(
+              StatusCodes.NOT_FOUND,
+              'Parcela no encontrada'
+            ));
+          }
+
+          if (!managedFieldIds.includes(plot.fieldId)) {
+            return next(new HttpException(
+              StatusCodes.FORBIDDEN,
+              'No tienes permisos para ver reportes de esta parcela. Solo puedes acceder a parcelas de los campos que gestionas.'
             ));
           }
         }

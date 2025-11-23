@@ -15,6 +15,13 @@ export class InputUsage {
   @Transform(({ value }) => parseFloat(value), { toPlainOnly: true })
   quantityUsed: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0, transformer: {
+    to: (value: number) => value,
+    from: (value: string) => parseFloat(value),
+  }})
+  @Transform(({ value }) => parseFloat(value), { toPlainOnly: true })
+  historicCostPerUnit: number; // Precio del insumo al momento de la transacción (para precisión histórica)
+
   @Column('uuid')
   activityId: string;
 

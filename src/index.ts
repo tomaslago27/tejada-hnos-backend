@@ -27,6 +27,7 @@ import { createGoodsReceiptRoutes } from "@routes/goods-receipt.routes";
 import { createSalesOrderRoutes } from "@routes/sale-order.routes";
 import { createShipmentRoutes } from "@routes/shipment.routes";
 import { createTraceRoutes } from "@routes/trace.routes";
+import { createReportRoutes } from "@routes/report.routes";
 
 const startServer = async () => {
   try {
@@ -72,6 +73,7 @@ const startServer = async () => {
     app.use("/sale-orders", createSalesOrderRoutes(dataSource));
     app.use("/shipments", createShipmentRoutes(dataSource));
     app.use("/trace", createTraceRoutes(dataSource));
+    app.use("/reports", createReportRoutes(dataSource));
 
     // 4. Configurar Error Handler (al final)
     app.use(errorHandler);
