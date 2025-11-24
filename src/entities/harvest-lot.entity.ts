@@ -34,30 +34,30 @@ export class HarvestLot {
 
   @Column('decimal', { precision: 10, scale: 2, transformer: {
     to: (value: number) => value,
-    from: (value: string) => parseFloat(value),
+    from: (value: string | null) => value != null ? parseFloat(value) : value,
   }})
-  @Transform(({ value }) => parseFloat(value), { toPlainOnly: true })
+   @Transform(({ value }) => value != null ? parseFloat(value) : value, { toPlainOnly: true })
   grossWeightKg: number; // Peso bruto del campo
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true, transformer: {
-    to: (value: number) => value,
-    from: (value: string) => parseFloat(value),
+     to: (value: number | null) => value,
+    from: (value: string | null) => value != null ? parseFloat(value) : null,
   }})
-  @Transform(({ value }) => parseFloat(value), { toPlainOnly: true })
+  @Transform(({ value }) => value != null ? parseFloat(value) : value, { toPlainOnly: true })
   netWeightKg: number; // Peso neto (seco) de planta
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true, transformer: {
-    to: (value: number) => value,
-    from: (value: string) => parseFloat(value),
+     to: (value: number | null) => value,
+    from: (value: string | null) => value != null ? parseFloat(value) : null,
   }})
-  @Transform(({ value }) => parseFloat(value), { toPlainOnly: true })
+  @Transform(({ value }) => value != null ? parseFloat(value) : null, { toPlainOnly: true })
   remainingNetWeightKg: number; // Peso neto disponible (decrece con envíos)
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: {
-    to: (value: number) => value,
-    from: (value: string) => parseFloat(value),
+    to: (value: number | null) => value,
+    from: (value: string | null) => value != null ? parseFloat(value) : null,
   }})
-  @Transform(({ value }) => parseFloat(value), { toPlainOnly: true })
+  @Transform(({ value }) => value != null ? parseFloat(value) : null, { toPlainOnly: true })
   yieldPercentage: number; // (neto / bruto) * 100
 
   @Column({
